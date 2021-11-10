@@ -79,6 +79,42 @@ class AthenacWebAPILibry:
         for i in r:
             result.append([i['Ip'],i['Macs']])
         return result
+    
+    def GetMACDetail(self,Token:str,MAC:str,Isonline:bool,SiteId:int)->list:
+        Path = '/api/Hosts/Mac'
+        Data = {'take':100,"filter":{'logic':'and'
+        ,'filters':[
+            {'field':'Mac','value':MAC,'operator':'eq'}
+            ,{'field':'IsOnline','value':str(Isonline),'operator':'eq'}
+            ,{'field':'SiteId','value':SiteId,'operator':'eq'}]}}
+        result=[]
+        Header = {'Authorization':Token,'Content-type': 'application/json'}
+        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        r=json.loads(r.text)['Data']
+        for i in r:
+            result.append([i['MacAddressId'],i['IsRegisteded'],i['HostName'],i['HostWorkgroup'],i['IsPrivileged'],i['OSType']])
+        return result
+    
+    def GetIPv4Detail(self,Token:str,IP:str,Isonline:bool)->list:
+        Path = '/api/Hosts/Ipv4'
+        Data = {'take':100,"filter":{'logic':'and'
+        ,'filters':[
+            {'field':'IpInfo.Ip','value':IP,'operator':'eq'}
+            ,{'field':'IsOnline','value':str(Isonline),'operator':'eq'}
+            ]}}
+        result=[]
+        Header = {'Authorization':Token,'Content-type': 'application/json'}
+        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        r=json.loads(r.text)['Data']
+        for i in r:
+            result.append([i['IpInfo']['IpAddressId'],not i['IpInfo']['BlockingStatus']['IsBlockByUnAuth'],i['MacInfo']['SiteId']])
+        return result
+    
+    def AuthMAC(self,Token:str,MacID:int,Auth:bool)->None:
+        if Auth: Path ='/api/Hosts/AuthorizeMac/'+str(MacID)
+        else: Path ='/api/Hosts/UnauthorizeMac/'+str(MacID)
+        Header = {'Authorization':Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
     def DumpJson(self,Token:str,Path:str)->None:
         result = []

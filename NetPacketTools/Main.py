@@ -1,8 +1,12 @@
 import time
 from PacketAction import PacketAction
+from PacketListen import PacketListen
 
-Device1 = PacketAction('Ethernet1')
-Device2 = PacketAction('Ethernet2')
+
+PacketListen('Wi-Fi')
+
+# Device1 = PacketAction('Ethernet1')
+# Device2 = PacketAction('Ethernet2')
 
 #執行 DHCPv4 壓力測試
 # Device1.DHCPv4ClientTest()
