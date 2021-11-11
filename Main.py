@@ -1,5 +1,8 @@
+from os import write
 import time
 import datetime
+
+from requests.models import to_key_val_list
 from NetPacketTools.PacketAction import PacketAction
 from APITools.AthenacWebAPILibry import AthenacWebAPILibry
 
@@ -93,13 +96,39 @@ def  DHCPpressureTestCase()->None:
     WriteLog(log)
     WriteLog('DHCPpressureTestCaseFinish')
 
-lan1 = PacketAction('Ethernet1')
+def MACblockTestCase()->None:
+    WriteLog('MACblockTestCaseStart')
+    Token,refreshToken =AthenacAPI.GetLoginToken('admin','admin')
+    MacData = AthenacAPI.GetMACDetail(Token=Token,MAC=lan2MACUpper,Isonline=True,SiteId=1)
+    AthenacAPI.BlockMAC(Token=Token,MacID=MacData[0][0],Block=True)
+    time.sleep(10)
+    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
+    if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
+    AthenacAPI.BlockMAC(Token=Token,MacID=MacData[0][0],Block=False)
+    WriteLog('MACblockTestCaseFinish')
+
+def IPBlockCase()->None:
+    WriteLog('IPBlockCaseStart')
+    Token,refreshToken =AthenacAPI.GetLoginToken('admin','admin')
+    IPData = AthenacAPI.GetIPv4Detail(Token,lan2.Ip,True)
+    AthenacAPI.BlockIPv4(Token,IPData[0][1],True)
+    time.sleep(10)
+    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
+    if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
+    AthenacAPI.BlockIPv4(Token,IPData[0][1],False)
+    WriteLog('IPBlockCaseFinish')
+
+TestIPv4 = '192.168.21.87'
+ProbeMAC = '00:aa:ff:ae:09:cc'
+lan1 = PacketAction('乙太網路')
 lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
-lan2 = PacketAction('Ethernet2')
+lan2 = PacketAction('乙太網路')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 serverIP='https://192.168.21.180:8001'
 AthenacAPI = AthenacWebAPILibry(serverIP)
 
+IPBlockCase()
+MACblockTestCase()
 IPconflictTestCase()
 OutofVLANTestCase()
 BroadcastTesttCase()

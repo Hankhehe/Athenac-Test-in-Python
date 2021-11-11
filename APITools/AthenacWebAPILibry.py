@@ -107,12 +107,30 @@ class AthenacWebAPILibry:
         r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         r=json.loads(r.text)['Data']
         for i in r:
-            result.append([i['IpInfo']['IpAddressId'],not i['IpInfo']['BlockingStatus']['IsBlockByUnAuth'],i['MacInfo']['SiteId']])
+            result.append([i['IpInfo']['IpAddressId'],i['HostId'],not i['IpInfo']['BlockingStatus']['IsBlockByUnAuth'],i['MacInfo']['SiteId']])
         return result
     
     def AuthMAC(self,Token:str,MacID:int,Auth:bool)->None:
         if Auth: Path ='/api/Hosts/AuthorizeMac/'+str(MacID)
         else: Path ='/api/Hosts/UnauthorizeMac/'+str(MacID)
+        Header = {'Authorization':Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+    def AuthIP(self,Token:str,HostId:int,Auth:bool)->None:
+        if Auth:Path = '/api/Hosts/AuthorizeIP/Host/'+str(HostId)
+        else: Path = '/api/Hosts/UnAuthorizeIP/'+str(HostId)
+        Header = {'Authorization':Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+    
+    def BlockMAC(self,Token:str,MacID:str,Block:bool)->None:
+        if Block: Path = '/api/Hosts/BlockMac/'+str(MacID)
+        else: Path = '/api/Hosts/UnblockMac/'+str(MacID)
+        Header = {'Authorization':Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+    def BlockIPv4(self,Token:str,HostID:str,Block:bool)->None:
+        if Block: Path ='/api/Hosts/BlockIp/V4/'+str(HostID)
+        else: Path = '/api/Hosts/UnBlockIp/V4/'+str(HostID)
         Header = {'Authorization':Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 

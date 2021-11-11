@@ -12,6 +12,8 @@ class PacketAction:
       self.mac = self.nic.mac
       self.linklocalIP = [x for x in self.nic.ips[6] if 'fe80::' in x]
       self.globallIP = [x for x in self.nic.ips[6] if '2001:' in x]
+      self.gatewayIP = conf.route.route('0.0.0.0')[2] 
+      self.gatewatIPv6 = conf.route6.route('::')[2]
       
    def DHCPv4ClientTest(self,count:int=70)-> str:
       logStr = ''
@@ -77,9 +79,9 @@ class PacketAction:
          fakeMACNum+=1
       return logStr
 
-   def ARPBlockCheck(self,IP:str,ProbeMAC:str)->bool:
+   def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
       ARPRequest = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
-         /ARP(op=1, hwdst="00:00:00:00:00:00", pdst=IP)
+         /ARP(op=1,hwsrc=self.mac, hwdst="00:00:00:00:00:00",psrc=srcIP, pdst=dstIP)
       result ,nums = srp(ARPRequest, retry=2,timeout=5,iface=self.nicName,multi=True)
       for s, r in result:
          if r[ARP].hwsrc == ProbeMAC:
