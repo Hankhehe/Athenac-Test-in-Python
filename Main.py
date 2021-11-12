@@ -1,6 +1,7 @@
 import time
 import datetime
 from NetPacketTools.PacketAction import PacketAction
+from NetPacketTools.PacketListen import PacketListen
 from APITools.AthenacWebAPILibry import AthenacWebAPILibry
 
 
@@ -118,8 +119,8 @@ def IPBlockCase()->None:
     AthenacAPI.BlockIPv4(Token,IPData[0][1],False)
     WriteLog('IPBlockCaseFinish')
 
-APIaccount = input('Please input Athenac accountname') or 'admin'
-APIpwd = input('Please input Athenac password') or 'admin'
+APIaccount = input('Please input Athenac accountname : ') or 'admin'
+APIpwd = input('Please input Athenac password : ') or 'admin'
 TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
 TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
 ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
@@ -127,9 +128,9 @@ lan1 = PacketAction( input('Please auth nic name : ') or 'Ethernet1')
 lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
 lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
-serverIP= input('Please input Server API Url example https://IP:8001') or 'https://192.168.21.180:8001'
+serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
 AthenacAPI = AthenacWebAPILibry(serverIP)
-
+#PacketListen(ProbeMAC,input('Please Listen nic name : ') or 'Ethernet1' )
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
