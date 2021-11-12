@@ -88,10 +88,10 @@ class PacketAction:
             return True
       return False
 
-   def NDPBlockCheck(self,IP:str,ProbeMAC:str)->bool:
+   def NDPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
       NDPSolic = Ether(src =self.mac,dst='33:33:ff:00:00:01')\
-         /IPv6(src=self.linklocalIP,dst='ff02::1')\
-            /ICMPv6ND_NS(tgt=IP)
+         /IPv6(src=srcIP,dst='ff02::1')\
+            /ICMPv6ND_NS(tgt=dstIP)
       result ,nums = srp(NDPSolic,retry=2,timeout=5,iface=self.nicName,multi=True)
       for s, r in result:
          if r[ICMPv6NDOptDstLLAddr].lladdr == ProbeMAC:
