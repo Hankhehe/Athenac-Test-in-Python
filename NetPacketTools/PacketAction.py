@@ -1,6 +1,7 @@
 import time
-from scapy.all import *
-from scapy.arch.windows import get_windows_if_list
+from scapy.all import get_working_if,get_working_ifaces,srp,sendp,conf,Ether,ARP,IP,UDP,BOOTP,DHCP,IPv6,DHCP6_Solicit,DHCP6OptElapsedTime,DHCP6OptClientId\
+   ,DHCP6OptIA_NA,DHCP6OptOptReq,DHCP6_Request,DHCP6OptServerId,DHCP6OptIAAddress,ICMPv6NDOptDstLLAddr,DHCP6_Advertise,ICMPv6ND_NS,ICMPv6NDOptSrcLLAddr\
+      ,ICMPv6ND_RA,ICMPv6NDOptMTU,ICMPv6NDOptPrefixInfo,ICMPv6ND_NA
 
 class PacketAction:
 
@@ -43,7 +44,7 @@ class PacketAction:
          fakeMACNum+=1
       return logStr
 
-   def DHCPv6ClientTest(self,count:int=700)-> None:
+   def DHCPv6ClientTest(self,count:int=700)-> str:
       logStr = ''
       tranId,Iana,ClientId,ServerId = 0,'','',''
       fakeMACNum =186916976721920

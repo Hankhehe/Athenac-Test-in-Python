@@ -130,7 +130,7 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
 AthenacAPI = AthenacWebAPILibry(serverIP)
-PacketListen(ProbeMAC,lan1.nicName)
+# PacketListen(ProbeMAC,lan1.nicName)
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2

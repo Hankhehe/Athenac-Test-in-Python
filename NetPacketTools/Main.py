@@ -1,16 +1,25 @@
 import time
-from PacketAction import PacketAction
-from PacketListen import PacketListen
+# from PacketAction import PacketAction
+# from PacketListen import PacketListen
 
 
-PacketListen('Wi-Fi')
+# PacketListen('Wi-Fi')
+try:
+    a = input('Please input Name')
+    print(a)
+    time.sleep(10)
+    # Device1 = PacketAction('Ethernet1')
+    # Device2 = PacketAction('Ethernet2')
 
-# Device1 = PacketAction('Ethernet1')
-# Device2 = PacketAction('Ethernet2')
+    #執行 DHCPv4 壓力測試
 
-#執行 DHCPv4 壓力測試
-# Device1.DHCPv4ClientTest()
-# log=Device2.DHCPv4ClientTest(3)
+    # log1 = Device1.DHCPv4ClientTest(1)
+    # log2 =Device1.DHCPv6ClientTest(1)
+    # print(log1)
+    # print(log2)
+    # print('Done')
+finally:
+    time.sleep(3000)
 
 #執行 DHCPv6 壓力測試
 # Device1.DHCPv6ClientTest()
@@ -60,5 +69,4 @@ PacketListen('Wi-Fi')
 #     Device2.SendNA('2001:b030:2133:815::3')
 #     time.sleep(5)
 
-pass
 

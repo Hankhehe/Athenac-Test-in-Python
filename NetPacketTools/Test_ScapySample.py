@@ -1,14 +1,14 @@
-from ast import Bytes 
-from scapy.all import *
-from scapy.utils import *
+# from ast import Bytes 
+# from scapy.all import *
+# from scapy.utils import *
 
-nic1 = get_working_if()
-nic1mac = nic1.mac
-micname = nic1.name
-nic = get_working_ifaces()
-for i in nic:
-    print(i.name)
-fam,hw = get_if_raw_hwaddr(conf.iface)
+# nic1 = get_working_if()
+# nic1mac = nic1.mac
+# micname = nic1.name
+# nic = get_working_ifaces()
+# for i in nic:
+#     print(i.name)
+# fam,hw = get_if_raw_hwaddr(conf.iface)
 
 
 pass

@@ -1,4 +1,4 @@
-from scapy.all import *
+from scapy.all import conf,get_working_ifaces,get_working_if,sniff,TCP,UDP
 import datetime
 
 class PacketListen:
