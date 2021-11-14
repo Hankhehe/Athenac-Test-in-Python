@@ -24,11 +24,19 @@ class SingleLinkedList:
 
         self.tail = item
         return
+    
+    def printlinkednode(self):
+        pl = self
+        while not pl.head is None:
+            print(pl.head.data)
+            pl.head = pl.head.next
+        return
+            
 
 
-node1 = ListNode(15)
 list1 = SingleLinkedList()
-list1.add_list_item(1)
 list1.add_list_item(1)
 list1.add_list_item(2)
 list1.add_list_item(3)
+list1.add_list_item(4)
+list1.printlinkednode()

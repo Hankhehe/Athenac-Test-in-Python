@@ -7,7 +7,13 @@ import time
 #arry = [2,b,'b',3,6]
 #print(arry)
 
-
+# a = 'abcd'
+# b='abcde'
+# print(a-b)
+la = 'abcde'
+lb = 'abcdef'
+diff = set(la)|set(lb)
+print(diff)
 Leetcode
 leedcoedc = Leetcode()
 
