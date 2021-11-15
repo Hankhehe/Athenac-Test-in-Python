@@ -1,3 +1,6 @@
+import collections
+from functools import reduce
+from typing import Collection
 from Leetcode import Leetcode
 import time
 
@@ -7,13 +10,23 @@ import time
 #arry = [2,b,'b',3,6]
 #print(arry)
 
-# a = 'abcd'
-# b='abcde'
-# print(a-b)
-la = 'abcde'
-lb = 'abcdef'
-diff = set(la)|set(lb)
-print(diff)
+s = 'abcd'
+t ='abcde'
+
+a=[]
+a.append(4)
+a.insert(0,1)
+a.insert(0,2)
+print (a)
+pass
+scount ,tcount = collections.Counter(s),collections.Counter(t)
+for t in tcount:
+    if tcount[t] > scount[t]:
+        print (t.count())
+reduce
+
+
+
 Leetcode
 leedcoedc = Leetcode()
 

@@ -119,8 +119,8 @@ if __name__ == '__main__':
         tree.add(data)      #逐個加入樹的節點
  
     #time.sleep(50)
-    # print('遞迴實現前序遍歷：')
-    # tree.pre_order_recursion(tree.root)
+    print('遞迴實現前序遍歷：')
+    tree.pre_order_recursion(tree.root)
  
     # print ('\n堆疊實現前序遍歷')
     # tree.pre_order_stack(tree.root)
@@ -137,5 +137,5 @@ if __name__ == '__main__':
     # print ('\n堆疊實現後序遍歷：')
     # tree.post_order_stack(tree.root)
  
-    print ('\n\n佇列實現層次遍歷：')
-    tree.level_order_queue(tree.root)
+    # print ('\n\n佇列實現層次遍歷：')
+    # tree.level_order_queue(tree.root)

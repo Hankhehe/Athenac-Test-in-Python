@@ -15,15 +15,14 @@ def UnknowDHCPTestCase()->None:
     lan1.SendDHCPv6Advertise()
     lan1.SendRA()
     time.sleep(10)
-    token,refretoken = AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    unknowDHCPList = AthenacAPI.GetUnknowDHCPList(token)
+    unknowDHCPList = AthenacAPI.GetUnknowDHCPList()
     checkDHCPv4 = False
     checkDHCPv6 = False
     checkSLAAC = False
-    for ip,mac,Type in unknowDHCPList:
-        if ip == lan1.Ip and mac == lan1MACUpper and Type == 1: checkDHCPv4 = True; continue
-        if ip == lan1.linklocalIP[0] and mac == lan1MACUpper and Type == 1: checkDHCPv6 = True; continue
-        if ip == lan1.globallIP[0] and mac == lan1MACUpper and Type == 2:checkSLAAC=True; continue
+    for unknowDHCP in unknowDHCPList:
+        if unknowDHCP['Ip'] == lan1.Ip and unknowDHCP['Mac'] == lan1MACUpper and unknowDHCP['ServerType'] == 1: checkDHCPv4 = True; continue
+        if unknowDHCP['Ip'] == lan1.linklocalIP[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
+        if unknowDHCP['Ip'] == lan1.globallIP[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
     if not checkDHCPv4: WriteLog('False : UnknowDHCPTestCase DHCPv4')
     if not checkDHCPv6: WriteLog('False : UnknowDHCPTestCase DHCPv6')
     if not checkSLAAC: WriteLog('False : UnknowDHCPTestCase SLAAC')
@@ -34,10 +33,9 @@ def BroadcastTesttCase()->None:
     check = False
     lan1.SendARPReply(lan1.Ip,1000)
     time.sleep(120)
-    Token,refreshToken = AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    borDevices = AthenacAPI.GetBrocastDeviceList(Token)
-    for ip,mac in borDevices:
-        if ip == lan1.Ip and mac == lan1MACUpper: check = True; break
+    borDevices = AthenacAPI.GetBrocastDeviceList()
+    for borDevice in borDevices:
+        if borDevice['Ip'] == lan1.Ip and borDevice['Mac'] == lan1MACUpper: check = True; break
     if not check:WriteLog('False : BrocastcastTest %s'%(lan1.Ip))
     WriteLog('BroadcastTestCaseFinish')
 
@@ -46,10 +44,9 @@ def MultcastTestCase()->None:
     check = False
     lan1.SendNA(lan1.globallIP,1000)
     time.sleep(120)
-    Token,refreshToken =AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    mutidevices = AthenacAPI.GetMulicastDeviceList(Token)
-    for ip,mac in mutidevices:
-        if ip == lan1.globallIP[0] and mac == lan1MACUpper: check = True; break
+    mutidevices = AthenacAPI.GetMulicastDeviceList()
+    for mutidevice in mutidevices:
+        if mutidevice['Ip'] == lan1.globallIP[0] and mutidevice['Mac'] == lan1MACUpper: check = True; break
     if not check:WriteLog('False : MultcastTestCase %s'%(lan1.globallIP))
     WriteLog('MuticastTestCaseFinish')
             
@@ -58,10 +55,9 @@ def OutofVLANTestCase()->None:
     check = False
     lan1.SendARPReply('10.1.1.87')
     time.sleep(10)
-    Token,refreshToken =AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    outofVLANDevices = AthenacAPI.GetOutofVLANList(Token)
-    for ip,mac in outofVLANDevices:
-        if ip == '10.1.1.87' and mac == lan1MACUpper: check = True; break
+    outofVLANDevices = AthenacAPI.GetOutofVLANList()
+    for outofVLANDevice in outofVLANDevices:
+        if outofVLANDevice['Ip'] == '10.1.1.87' and outofVLANDevice['Mac'] == lan1MACUpper: check = True; break
     if not check: WriteLog('False : OutofVLANTestCase IP: 10.1.1.87')
     WriteLog('OutofVLANTestCaseFinish')
 
@@ -78,11 +74,10 @@ def IPconflictTestCase()->None:
         lan2.SendNA(targetipv6)
         time.sleep(2)
     time.sleep(10)
-    Token,refreshToken =AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    IPconflictdevices = AthenacAPI.GetIPconflictDeviceList(Token)
-    for ip ,macs in IPconflictdevices:
-        if ip == targetip and lan1MACUpper in macs and lan2MACUpper in macs:checkv4 = True; continue
-        if ip == targetipv6 and lan1MACUpper in macs and lan2MACUpper in macs:checkv6 = True; continue
+    IPconflictdevices = AthenacAPI.GetIPconflictDeviceList()
+    for IPconflictdevice in IPconflictdevices:
+        if IPconflictdevice['Ip'] == targetip and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv4 = True; continue
+        if IPconflictdevice['Ip'] == targetipv6 and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv6 = True; continue
     if not checkv4 : WriteLog('False : IPconflictTestCase' + targetip )
     if not checkv6 : WriteLog('False : IPconflictTestCase' + targetipv6 )
     WriteLog('IPconflictTestCaseSFinish')
@@ -97,26 +92,24 @@ def DHCPpressureTestCase()->None:
 
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
-    Token,refreshToken =AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    MacData = AthenacAPI.GetMACDetail(Token=Token,MAC=lan2MACUpper,Isonline=True,SiteId=1)
-    AthenacAPI.BlockMAC(Token=Token,MacID=MacData[0][0],Block=True)
+    MacData = AthenacAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
+    AthenacAPI.BlockMAC(Token=Token,MacID=MacData[0]['MacAddressId'],Block=True)
     time.sleep(10)
     if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
     if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Reply {TestIPv4}')
     if not lan2.NDPBlockCheck(lan2.globallIP,lan2.gatewatIPv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globallIP}')
     if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIPv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
-    AthenacAPI.BlockMAC(Token=Token,MacID=MacData[0][0],Block=False)
+    AthenacAPI.BlockMAC(MacID=MacData[0]['MacAddressId'],Block=False)
     WriteLog('MACblockTestCaseFinish')
 
 def IPBlockCase()->None:
     WriteLog('IPBlockCaseStart')
-    Token,refreshToken =AthenacAPI.GetLoginToken(APIaccount,APIpwd)
-    IPData = AthenacAPI.GetIPv4Detail(Token,lan2.Ip,True)
-    AthenacAPI.BlockIPv4(Token,IPData[0][1],True)
+    IPData = AthenacAPI.GetIPv4Detail(lan2.Ip,True)
+    AthenacAPI.BlockIPv4(IPData[0]['HostId'],True)
     time.sleep(10)
     if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
     if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
-    AthenacAPI.BlockIPv4(Token,IPData[0][1],False)
+    AthenacAPI.BlockIPv4(IPData[0]['HostId'],False)
     WriteLog('IPBlockCaseFinish')
 
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
@@ -129,7 +122,7 @@ lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
 lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
-AthenacAPI = AthenacWebAPILibry(serverIP)
+AthenacAPI = AthenacWebAPILibry(serverIP,APIaccount,APIpwd)
 # PacketListen(ProbeMAC,lan1.nicName)
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
