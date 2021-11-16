@@ -1,7 +1,8 @@
 import time
 from scapy.all import get_working_if,get_working_ifaces,srp,sendp,conf,Ether,ARP,IP,UDP,BOOTP,DHCP,IPv6,DHCP6_Solicit,DHCP6OptElapsedTime,DHCP6OptClientId\
    ,DHCP6OptIA_NA,DHCP6OptOptReq,DHCP6_Request,DHCP6OptServerId,DHCP6OptIAAddress,ICMPv6NDOptDstLLAddr,DHCP6_Advertise,ICMPv6ND_NS,ICMPv6NDOptSrcLLAddr\
-      ,ICMPv6ND_RA,ICMPv6NDOptMTU,ICMPv6NDOptPrefixInfo,ICMPv6ND_NA
+      ,ICMPv6ND_RA,ICMPv6NDOptMTU,ICMPv6NDOptPrefixInfo,ICMPv6ND_NA,Radius,RadiusAttr_NAS_IP_Address,RadiusAttribute
+from scapy.sendrecv import sr
 
 class PacketAction:
 
@@ -138,3 +139,13 @@ class PacketAction:
                   /ICMPv6NDOptSrcLLAddr(type=2,lladdr=self.mac)
          sendp(NDPAdver,iface=self.nicName)
          time.sleep(WaitSec)
+   
+   def CheckRadius(self,ServerIP:str)->None:
+      RadiusReq =Ether(src =self.mac,dst='00:00:0c:9f:f0:15')\
+         /IP(src=self.Ip,dst=ServerIP)\
+            /UDP(sport =51818,dport=1812)\
+               /Radius(authenticator=b'pixis',attributes=[RadiusAttr_NAS_IP_Address(value=b'192.168.10.249'),RadiusAttribute(type=31,len=19,value=self.mac.encode('utf-8'))])
+      result ,nums =srp(RadiusReq,timeout=5,iface=self.nicName)
+      for s, r in result:
+         rVLANID = r[Radius].attributes[1].value.decode('utf-8')
+         

@@ -1,16 +1,12 @@
 import time
-from AthenacWebAPILibry import AthenacWebAPILibry
+from athenac_web_API_libry import AthenacWebAPILibry
 
 ServerIP='https://192.168.21.180:8001'
-Action = AthenacWebAPILibry(ServerIP)
+Action = AthenacWebAPILibry(ServerIP,'admin','admin')
 
 
-#Get login Token
-# token,freshtoken = Action.GetLoginToken('admin','admin')
-# a = Action.GetDynamicSetting(token,1)
-# print(type(a))
-# print(a['EnableDynamicVLAN'])
-# pass
+
+
 #Get MAC Detail and Block/Unblock MAC
 # MacData = Action.GetMACDetail(MAC='005056AEAA69',Token=token,Isonline= True,SiteId=1)
 # Action.BlockMAC(Token=token,MacID=MacData[0][0],Block=True)

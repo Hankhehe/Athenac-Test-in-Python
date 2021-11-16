@@ -1,8 +1,8 @@
 import time
 import datetime
-from NetPacketTools.PacketAction import PacketAction
-from NetPacketTools.PacketListen import PacketListen
-from APITools.AthenacWebAPILibry import AthenacWebAPILibry
+from NetPacketTools.packet_action import PacketAction
+from NetPacketTools.packet_listen import PacketListen
+from APITools.athenac_web_API_libry import AthenacWebAPILibry
 
 
 def WriteLog(Txt:str)->None:
@@ -93,7 +93,7 @@ def DHCPpressureTestCase()->None:
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
     MacData = AthenacAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
-    AthenacAPI.BlockMAC(Token=Token,MacID=MacData[0]['MacAddressId'],Block=True)
+    AthenacAPI.BlockMAC(MacID=MacData[0]['MacAddressId'],Block=True)
     time.sleep(10)
     if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
     if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Reply {TestIPv4}')
@@ -112,8 +112,10 @@ def IPBlockCase()->None:
     AthenacAPI.BlockIPv4(IPData[0]['HostId'],False)
     WriteLog('IPBlockCaseFinish')
 
+serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
+AthenacAPI = AthenacWebAPILibry(serverIP,APIaccount,APIpwd)
 TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
 TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
 ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
@@ -121,8 +123,7 @@ lan1 = PacketAction( input('Please auth nic name : ') or 'Ethernet1')
 lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
 lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
-serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
-AthenacAPI = AthenacWebAPILibry(serverIP,APIaccount,APIpwd)
+
 # PacketListen(ProbeMAC,lan1.nicName)
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
@@ -132,3 +133,4 @@ BroadcastTesttCase()#use lan1
 MultcastTestCase() #use lan1
 UnknowDHCPTestCase() # use lan1
 DHCPpressureTestCase() # use lan1
+WriteLog('----------------------TestFinish from All TetsCase----------------------')

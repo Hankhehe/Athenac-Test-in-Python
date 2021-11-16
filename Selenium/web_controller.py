@@ -1,7 +1,7 @@
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from FileInput import FileInput
+from file_input import FileInput
 
 
 class WebController:

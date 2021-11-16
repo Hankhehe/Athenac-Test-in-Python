@@ -1,26 +1,13 @@
 import time
-# from PacketAction import PacketAction
+from PacketAction import PacketAction
 # from PacketListen import PacketListen
 
 
-# PacketListen('Wi-Fi')
-try:
-    a = input('Please input Name')
-    print(a)
-    time.sleep(10)
-    # Device1 = PacketAction('Ethernet1')
-    # Device2 = PacketAction('Ethernet2')
+Action = PacketAction('Ethernet1')
+Action.CheckRadius('192.168.10.180')
 
-    #執行 DHCPv4 壓力測試
 
-    # log1 = Device1.DHCPv4ClientTest(1)
-    # log2 =Device1.DHCPv6ClientTest(1)
-    # print(log1)
-    # print(log2)
-    # print('Done')
-finally:
-    time.sleep(3000)
-
+pass
 #執行 DHCPv6 壓力測試
 # Device1.DHCPv6ClientTest()
 # Device2.DHCPv6ClientTest(3)
