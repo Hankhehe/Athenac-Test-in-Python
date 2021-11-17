@@ -9,7 +9,7 @@ from packet_action_test import PacketActionTest
 
 
 Action = PacketAction('Ethernet1')
-vlanid = Action.Get8021xVlanId('192.168.21.180','192.168.10.249')
+vlanid = Action.GetRadiusReply('192.168.21.180','192.168.10.249')
 print(vlanid)
 
 pass

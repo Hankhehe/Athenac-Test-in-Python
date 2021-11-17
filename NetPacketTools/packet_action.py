@@ -146,7 +146,7 @@ class PacketAction:
       result ,nums = srp(arprequest, retry=2,timeout=5,iface=self.nicname)
       return result[0][1][ARP].hwsrc if result else None
       
-   def Get8021xVlanId(self,serverip:str,nasip)->None:
+   def GetRadiusReply(self,serverip:str,nasip)->dict:
       dstmac = self.GetIPv4MAC(serverip)
       if not dstmac: return
       RadiusReq =Ether(src =self.mac,dst=dstmac)\
@@ -154,4 +154,5 @@ class PacketAction:
             /UDP(sport =51818,dport=1812)\
                /Radius(authenticator=b'pixis',attributes=[RadiusAttr_NAS_IP_Address(value=nasip.encode('utf-8')),RadiusAttribute(type=31,len=19,value=self.mac.encode('utf-8'))])
       result ,nums =srp(RadiusReq,retry=3,timeout=5,iface=self.nicname)
-      return result[0][1][Radius].attributes[1].value.decode('utf-8')
+      return {'RadiusCode':result[0][1][Radius].code,'VLANId':result[0][1][Radius].attributes[1].value.decode('utf-8')}
+      #Radius Code : Accept =2 , Reject =3

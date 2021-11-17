@@ -3,6 +3,11 @@ from athenac_web_API_libry import AthenacWebAPILibry
 
 ServerIP='https://192.168.21.180:8001'
 Action = AthenacWebAPILibry(ServerIP,'admin','admin')
+time.sleep(3)
+Data1 = Action.GetRadiusClientSetting('1')
+Data2 = Action.GetDynamicSetting('1')
+pass
+
 
 
 
