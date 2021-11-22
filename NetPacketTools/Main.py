@@ -4,13 +4,13 @@ from packet_action_test import PacketActionTest
 # from PacketListen import PacketListen
 
 
-testaction = PacketActionTest('Wi-Fi')
-testaction.SendRadiusRequest()
-# testaction.TestCoAMessageAuthenHash()
-testaction.TestRadiusAuthenHash()
+# testaction = PacketActionTest('Ethernet1')
+# testaction.SendRadiusCoARequest()
 
 
-
+Action = PacketAction('Ethernet1')
+vlanid = Action.GetRadiusReply('192.168.21.180','192.168.10.249')
+print(vlanid)
 
 pass
 #執行 DHCPv6 壓力測試

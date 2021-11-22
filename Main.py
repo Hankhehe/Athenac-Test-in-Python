@@ -21,8 +21,8 @@ def UnknowDHCPTestCase()->None:
     checkSLAAC = False
     for unknowDHCP in unknowDHCPList:
         if unknowDHCP['Ip'] == lan1.Ip and unknowDHCP['Mac'] == lan1MACUpper and unknowDHCP['ServerType'] == 1: checkDHCPv4 = True; continue
-        if unknowDHCP['Ip'] == lan1.linklocalIP[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
-        if unknowDHCP['Ip'] == lan1.globallIP[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
+        if unknowDHCP['Ip'] == lan1.linklocalIp[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
+        if unknowDHCP['Ip'] == lan1.globalIp[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
     if not checkDHCPv4: WriteLog('False : UnknowDHCPTestCase DHCPv4')
     if not checkDHCPv6: WriteLog('False : UnknowDHCPTestCase DHCPv6')
     if not checkSLAAC: WriteLog('False : UnknowDHCPTestCase SLAAC')
@@ -42,12 +42,12 @@ def BroadcastTesttCase()->None:
 def MultcastTestCase()->None:
     WriteLog('MuticastTestCaseStart')
     check = False
-    lan1.SendNA(lan1.globallIP,1000)
+    lan1.SendNA(lan1.globalIp,1000)
     time.sleep(120)
     mutidevices = AthenacAPI.GetMulicastDeviceList()
     for mutidevice in mutidevices:
-        if mutidevice['Ip'] == lan1.globallIP[0] and mutidevice['Mac'] == lan1MACUpper: check = True; break
-    if not check:WriteLog('False : MultcastTestCase %s'%(lan1.globallIP))
+        if mutidevice['Ip'] == lan1.globalIp[0] and mutidevice['Mac'] == lan1MACUpper: check = True; break
+    if not check:WriteLog('False : MultcastTestCase %s'%(lan1.globalIp))
     WriteLog('MuticastTestCaseFinish')
             
 def OutofVLANTestCase()->None:
@@ -95,10 +95,10 @@ def MACblockTestCase()->None:
     MacData = AthenacAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
     AthenacAPI.BlockMAC(MacID=MacData[0]['MacAddressId'],Block=True)
     time.sleep(10)
-    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
-    if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Reply {TestIPv4}')
-    if not lan2.NDPBlockCheck(lan2.globallIP,lan2.gatewatIPv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globallIP}')
-    if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIPv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
+    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
+    if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Reply {TestIPv4}')
+    if not lan2.NDPBlockCheck(lan2.globalIp,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globalIp}')
+    if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
     AthenacAPI.BlockMAC(MacID=MacData[0]['MacAddressId'],Block=False)
     WriteLog('MACblockTestCaseFinish')
 
@@ -107,8 +107,8 @@ def IPBlockCase()->None:
     IPData = AthenacAPI.GetIPv4Detail(lan2.Ip,True)
     AthenacAPI.BlockIPv4(IPData[0]['HostId'],True)
     time.sleep(10)
-    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIP,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
-    if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIP,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
+    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
+    if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
     AthenacAPI.BlockIPv4(IPData[0]['HostId'],False)
     WriteLog('IPBlockCaseFinish')
 
