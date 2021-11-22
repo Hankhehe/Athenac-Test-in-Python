@@ -4,12 +4,12 @@ from packet_action_test import PacketActionTest
 # from PacketListen import PacketListen
 
 
-testaction = PacketActionTest('Ethernet1')
-testaction.SendRadiusCoARequest()
+testaction = PacketActionTest('Wi-Fi')
+testaction.SendRadiusRequest()
+# testaction.TestCoAMessageAuthenHash()
+testaction.TestRadiusAuthenHash()
 
 
-Action = PacketAction('Ethernet1')
-Action.CheckRadius('192.168.10.180')
 
 
 pass
