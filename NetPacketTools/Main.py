@@ -4,8 +4,8 @@ from packet_action_test import PacketActionTest
 # from PacketListen import PacketListen
 
 
-# testaction = PacketActionTest('Ethernet1')
-# testaction.SendRadiusCoARequest()
+testaction = PacketActionTest('Ethernet1')
+testaction.SendRadiusCoARequest()
 
 
 Action = PacketAction('Ethernet1')
