@@ -10,6 +10,12 @@ import time
 #arry = [2,b,'b',3,6]
 #print(arry)
 
+list1 = ['a','b','c']
+list2 = ['b','c','d']
+
+print(list(set(list1)&set(list2)))
+pass
+
 s = 'abcd'
 t ='abcde'
 

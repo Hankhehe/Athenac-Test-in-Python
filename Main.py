@@ -93,13 +93,13 @@ def DHCPpressureTestCase()->None:
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
     MacData = AthenacAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
-    AthenacAPI.BlockMAC(MacID=MacData[0]['MacAddressId'],Block=True)
+    AthenacAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=True)
     time.sleep(10)
     if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
     if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Reply {TestIPv4}')
     if not lan2.NDPBlockCheck(lan2.globalIp,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globalIp}')
     if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
-    AthenacAPI.BlockMAC(MacID=MacData[0]['MacAddressId'],Block=False)
+    AthenacAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=False)
     WriteLog('MACblockTestCaseFinish')
 
 def IPBlockCase()->None:
@@ -111,6 +111,10 @@ def IPBlockCase()->None:
     if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
     AthenacAPI.BlockIPv4(IPData[0]['HostId'],False)
     WriteLog('IPBlockCaseFinish')
+
+def RadiusTestCase()->None:
+    AthenacAPI.UpdateRadiusSetting(1)
+    pass
 
 serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
@@ -125,6 +129,7 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 # PacketListen(ProbeMAC,lan1.nicName)
+RadiusTestCase()
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2

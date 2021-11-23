@@ -3,6 +3,7 @@ import json
 from urllib import parse
 import time
 import threading
+import DataModel.datamodel_radius_setting
 
 class AthenacWebAPILibry:
     def __init__(self,ServerIP:str,Account:str,Pwd:str) -> None:
@@ -131,27 +132,27 @@ class AthenacWebAPILibry:
             ,'SiteId':i['MacInfo']['SiteId']})
         return result
     
-    def AuthMAC(self,MacID:int,Auth:bool)->None:
-        if Auth: Path ='/api/Hosts/AuthorizeMac/'+str(MacID)
-        else: Path ='/api/Hosts/UnauthorizeMac/'+str(MacID)
+    def AuthMAC(self,macid:int,auth:bool)->None:
+        if auth: Path ='/api/Hosts/AuthorizeMac/'+str(macid)
+        else: Path ='/api/Hosts/UnauthorizeMac/'+str(macid)
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def AuthIP(self,HostId:int,Auth:bool)->None:
-        if Auth:Path = '/api/Hosts/AuthorizeIP/Host/'+str(HostId)
-        else: Path = '/api/Hosts/UnAuthorizeIP/'+str(HostId)
+    def AuthIP(self,hostid:int,Auth:bool)->None:
+        if Auth:Path = '/api/Hosts/AuthorizeIP/Host/'+str(hostid)
+        else: Path = '/api/Hosts/UnAuthorizeIP/'+str(hostid)
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
     
-    def BlockMAC(self,MacID:str,Block:bool)->None:
-        if Block: Path = '/api/Hosts/BlockMac/'+str(MacID)
-        else: Path = '/api/Hosts/UnblockMac/'+str(MacID)
+    def BlockMAC(self,macid:str,block:bool)->None:
+        if block: Path = '/api/Hosts/BlockMac/'+str(macid)
+        else: Path = '/api/Hosts/UnblockMac/'+str(macid)
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def BlockIPv4(self,HostID:str,Block:bool)->None:
-        if Block: Path ='/api/Hosts/BlockIp/V4/'+str(HostID)
-        else: Path = '/api/Hosts/UnBlockIp/V4/'+str(HostID)
+    def BlockIPv4(self,hostid:str,block:bool)->None:
+        if block: Path ='/api/Hosts/BlockIp/V4/'+str(hostid)
+        else: Path = '/api/Hosts/UnBlockIp/V4/'+str(hostid)
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
@@ -169,8 +170,8 @@ class AthenacWebAPILibry:
             ,'SharedSecret':i['SharedSecret']})
         return result
     
-    def GetDynamicSetting(self,SiteId:str)->dict:
-        Path = f'/api/Site/{str(SiteId)}/Radius'
+    def GetDynamicSetting(self,siteid:int)->dict:
+        Path = f'/api/Site/{str(siteid)}/Radius'
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
         r = json.loads(r.text)
@@ -191,5 +192,12 @@ class AthenacWebAPILibry:
         ,'SiteVerifyModule':r['SiteVerifyModule']
         ,'VLanMappingType':r['VLanMappingType']
         ,'EnableBlockMessageAndVerification':r['EnableBlockMessageAndVerification']}
+    
+    def UpdateRadiusSetting(self,siteid:int)->None:
+        Path = f'/api/Site/Radius'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        Data = DataModel.datamodel_radius_setting
+        Data.RadiusSetting.DeviceDivideType
+        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
 
 
