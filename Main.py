@@ -3,6 +3,7 @@ import datetime
 from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListen
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
+from APITools.Enums.enum_flag import RadiusVLANMappingType
 
 
 def WriteLog(Txt:str)->None:
@@ -113,10 +114,9 @@ def IPBlockCase()->None:
     WriteLog('IPBlockCaseFinish')
 
 def RadiusTestCase()->None:
-    AthenacAPI.UpdateRadiusSetting(1)
     pass
 
-serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'https://192.168.21.180:8001'
+serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'http://192.168.21.180:8000'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
 AthenacAPI = AthenacWebAPILibry(serverIP,APIaccount,APIpwd)

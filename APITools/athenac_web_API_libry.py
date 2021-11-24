@@ -3,7 +3,7 @@ import json
 from urllib import parse
 import time
 import threading
-import DataModel.datamodel_radius_setting
+from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient
 
 class AthenacWebAPILibry:
     def __init__(self,ServerIP:str,Account:str,Pwd:str) -> None:
@@ -42,7 +42,7 @@ class AthenacWebAPILibry:
         return json.loads(r.text)
     
     def GetUnknowDHCPList(self)->list[dict]:
-        Data={'take':100}
+        Data={'take':0}
         Path = '/api/UnknownDhcpServer/Query'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         result = []
@@ -74,7 +74,7 @@ class AthenacWebAPILibry:
     
     def GetOutofVLANList(self)->list[dict]:
         Path = '/api/OutOfVlan/Query'
-        Data={'take':100}
+        Data={'take':0}
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         result = []
         r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
@@ -85,7 +85,7 @@ class AthenacWebAPILibry:
     
     def GetIPconflictDeviceList(self)->list[dict]:
         Path = '/api/IpConflict/Query'
-        Data={'take':100}
+        Data={'take':0}
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         result = []
         r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
@@ -96,7 +96,7 @@ class AthenacWebAPILibry:
     
     def GetMACDetail(self,MAC:str,Isonline:bool,SiteId:int)->list[dict]:
         Path = '/api/Hosts/Mac'
-        Data = {'take':100,"filter":{'logic':'and'
+        Data = {'take':0,"filter":{'logic':'and'
         ,'filters':[
             {'field':'Mac','value':MAC,'operator':'eq'}
             ,{'field':'IsOnline','value':str(Isonline),'operator':'eq'}
@@ -116,7 +116,7 @@ class AthenacWebAPILibry:
     
     def GetIPv4Detail(self,IP:str,Isonline:bool)->list[dict]:
         Path = '/api/Hosts/Ipv4'
-        Data = {'take':100,"filter":{'logic':'and'
+        Data = {'take':0,"filter":{'logic':'and'
         ,'filters':[
             {'field':'IpInfo.Ip','value':IP,'operator':'eq'}
             ,{'field':'IsOnline','value':str(Isonline),'operator':'eq'}
@@ -156,10 +156,10 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def GetRadiusClientSetting(self,SiteId:str)->list[dict]:
+    def GetRadiusClientList(self,SiteId:str=1)->list[dict]:
         Path = f'/api/Site/{str(SiteId)}/RadiusClients'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        Data = {'take':10}
+        Data = {'take':0}
         result = []
         r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         r = json.loads(r.text)['Data']
@@ -170,34 +170,43 @@ class AthenacWebAPILibry:
             ,'SharedSecret':i['SharedSecret']})
         return result
     
-    def GetDynamicSetting(self,siteid:int)->dict:
+    def GetRadiusSetting(self,siteid:int=1)->dict:
         Path = f'/api/Site/{str(siteid)}/Radius'
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        return {'DeviceDivideType':r['DeviceDivideType']
-        ,'EnableDynamicVLAN':r['EnableDynamicVLAN']
-        ,'EnableExternalAutoQuarantine':r['EnableExternalAutoQuarantine']
-        ,'EnableExternalOnlineVerification':r['EnableExternalOnlineVerification']
-        ,'EnableInternalAutoQuarantine':r['EnableInternalAutoQuarantine']
-        ,'EnableInternalOnlineVerification':r['EnableInternalOnlineVerification']
-        ,'EnableRadius':r['EnableRadius']
-        ,'ExternalDefaultVLan':r['ExternalDefaultVLan']
-        ,'ExternalQuarantineVLan':r['ExternalQuarantineVLan']
-        ,'ExternalVerifyVLan':r['ExternalVerifyVLan']
-        ,'InternalDefaultVLan':r['InternalDefaultVLan']
-        ,'InternalQuarantineVLan':r['InternalQuarantineVLan']
-        ,'InternalVerifyVLan':r['InternalVerifyVLan']
-        ,'SiteId':r['SiteId']
-        ,'SiteVerifyModule':r['SiteVerifyModule']
-        ,'VLanMappingType':r['VLanMappingType']
-        ,'EnableBlockMessageAndVerification':r['EnableBlockMessageAndVerification']}
+        r:RadiusSetting = json.loads(r.text)
+        return r
     
-    def UpdateRadiusSetting(self,siteid:int)->None:
-        Path = f'/api/Site/Radius'
+    def UpdateRadiusSetting(self,Data:RadiusSetting=RadiusSetting())->None:
+        Path = '/api/Site/Radius'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        Data = DataModel.datamodel_radius_setting
-        Data.RadiusSetting.DeviceDivideType
-        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+    
+    def AddVLANMaping(self,name:str,Type:int,vlanid:int,siteid:int=1)->None:
+        Path = '/api/Site/RadiusVLanMapping'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        Data = {"AssignVlan": vlanid, "MappingValue": name, "MappingValueType": Type, "SiteId": siteid}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+    
+    def GetVLANMapping(self,name:str,Type:int,siteid:int=1)->dict:
+        Path = f'/api/Site/{siteid}/VLanMapping'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        Data = {'take':0}
+        r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        r = json.loads(r.text)['Data']
+        for i in r:
+            if i['MappingValue'] == name and i['MappingValueType'] == Type: #Type 1 = MAC , 2 = Account
+                return {'AssignVlan':i['AssignVlan']
+                        ,'Id':i['Id']
+                        ,'MappingValue':i['MappingValue']
+                        ,'MappingValueType':i['MappingValueType']
+                        ,'SiteId':i['SiteId']
+                        ,'SiteName':i['SiteName']}
 
-
+    def AddRadiusClient(self,Data:RadiusClient=RadiusClient())->None:
+        Path = '/api/Site/RadiusClient'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+    
+    def ClearAllRadiusClientatSite(self,siteid=int)->list:
+        pass
