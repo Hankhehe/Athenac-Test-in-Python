@@ -1,5 +1,6 @@
 import time
 import datetime
+from APITools.DataModels.datamodel_apidata import RadiusSetting
 from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListen
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
@@ -113,13 +114,39 @@ def IPBlockCase()->None:
     AthenacAPI.BlockIPv4(IPData[0]['HostId'],False)
     WriteLog('IPBlockCaseFinish')
 
-def RadiusTestCase()->None:
-    pass
+def RadiusDynamicVLANTestCase()->None:
+    WriteLog('RadiusDynamicVLANTestCaseStart')
+    AthenacAPI.UpdateRadiusSetting()
+    AthenacAPI.ClearAllRadiusClientatSite()
+    AthenacAPI.AddRadiusClient()
+    AthenacAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    dynamicset = RadiusSetting() 
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {lan1replyvlanid}')
+    elif not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply')
+    AthenacAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid}')
+    elif not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply')
+    AthenacAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value,21)
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != '21':
+        WriteLog(f'False : Recive not VLAN ID 21 is VLAN ID {lan1replyvlanid}')
+    elif not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply')
+    AthenacAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    WriteLog('RadiusDynamicVLANTestCaseFinish')
+        
 
-serverIP= input('Please input Server API Url example https://IP:8001 : ') or 'http://192.168.21.180:8000'
+
+serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
-AthenacAPI = AthenacWebAPILibry(serverIP,APIaccount,APIpwd)
+AthenacAPI = AthenacWebAPILibry(f'https://{serverIP}:8001',APIaccount,APIpwd)
 TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
 TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
 ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
@@ -129,7 +156,7 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 # PacketListen(ProbeMAC,lan1.nicName)
-RadiusTestCase()
+RadiusDynamicVLANTestCase()
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2

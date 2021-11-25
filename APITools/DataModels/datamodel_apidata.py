@@ -21,8 +21,7 @@ class RadiusSetting:
         self.VLanMappingType = VLanMappingType
 
 class RadiusClient:
-    def __init__(self,Id:int=0,IP:str='0.0.0.0',RadiusAVPId:int=1,SharedSecret:str='pixis',SiteId:int=1,SubnetMask:str='0') -> None:
-        self.Id= Id
+    def __init__(self,IP:str='0.0.0.0',RadiusAVPId:int=1,SharedSecret:str='pixis',SiteId:int=1,SubnetMask:str='0') -> None:
         self.IP= IP
         self.RadiusAVPId= RadiusAVPId
         self.SharedSecret= SharedSecret

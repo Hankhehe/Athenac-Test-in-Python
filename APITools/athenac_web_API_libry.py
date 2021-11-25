@@ -156,15 +156,16 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def GetRadiusClientList(self,SiteId:str=1)->list[dict]:
-        Path = f'/api/Site/{str(SiteId)}/RadiusClients'
+    def GetRadiusClientList(self,siteid:int=1)->list[dict]:
+        Path = f'/api/Site/{str(siteid)}/RadiusClients'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {'take':0}
         result = []
         r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         r = json.loads(r.text)['Data']
         for i in r:
-            result.append({'IP':i['IP']
+            result.append({'Id':i['Id']
+            ,'IP':i['IP']
             ,'SubnetMask':i['SubnetMask']
             ,'RadiusAVPName':i['RadiusAVPName']
             ,'SharedSecret':i['SharedSecret']})
@@ -182,11 +183,21 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
-    def AddVLANMaping(self,name:str,Type:int,vlanid:int,siteid:int=1)->None:
+    def AddVLANMapping(self,name:str,Type:int,vlanid:int =None,siteid:int=1)->None:
         Path = '/api/Site/RadiusVLanMapping'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {"AssignVlan": vlanid, "MappingValue": name, "MappingValueType": Type, "SiteId": siteid}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        if vlanmappingdata:= self.GetVLANMapping(name,Type,siteid):
+            Data['Id']=vlanmappingdata['Id']
+            requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        else:
+            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+    
+    def DelVLANMapping(self,name:str,Type:int,siteid:int =1)->None:
+        if vlanmappingdata:= self.GetVLANMapping(name,Type,siteid):
+            Path = f'/api/Site/RadiusVLanMapping/{str(vlanmappingdata["Id"])}'
+            Header = {'Authorization':self.Token}
+            requests.delete(self.ServerIP+Path,headers=Header,verify=False)
     
     def GetVLANMapping(self,name:str,Type:int,siteid:int=1)->dict:
         Path = f'/api/Site/{siteid}/VLanMapping'
@@ -208,5 +219,12 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
-    def ClearAllRadiusClientatSite(self,siteid=int)->list:
-        pass
+    def ClearAllRadiusClientatSite(self,siteid:int=1)->list:
+        radiusclients = self.GetRadiusClientList(1)
+        for radiuscilient in radiusclients:
+            self.DelRadiusClient(radiuscilient['Id'])
+             
+    def DelRadiusClient(self,id:int)->None:
+        Path = f'/api/Site/RadiusClient/{str(id)}'
+        Header = {'Authorization':self.Token}
+        requests.delete(self.ServerIP+Path,headers=Header,verify=False)
