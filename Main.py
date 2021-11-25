@@ -4,7 +4,7 @@ from APITools.DataModels.datamodel_apidata import RadiusSetting
 from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListen
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
-from APITools.Enums.enum_flag import RadiusVLANMappingType
+from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
 
 
 def WriteLog(Txt:str)->None:
@@ -17,14 +17,14 @@ def UnknowDHCPTestCase()->None:
     lan1.SendDHCPv6Advertise()
     lan1.SendRA()
     time.sleep(10)
-    unknowDHCPList = AthenacAPI.GetUnknowDHCPList()
+    unknowDHCPList = AthenacWebAPI.GetUnknowDHCPList()
     checkDHCPv4 = False
     checkDHCPv6 = False
     checkSLAAC = False
     for unknowDHCP in unknowDHCPList:
         if unknowDHCP['Ip'] == lan1.Ip and unknowDHCP['Mac'] == lan1MACUpper and unknowDHCP['ServerType'] == 1: checkDHCPv4 = True; continue
-        if unknowDHCP['Ip'] == lan1.linklocalIp[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
-        if unknowDHCP['Ip'] == lan1.globalIp[0] and unknowDHCP['Mac'] == unknowDHCP['ServerType'] and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
+        if unknowDHCP['Ip'] == lan1.linklocalIp[0] and unknowDHCP['Mac'] == lan1MACUpper and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
+        if unknowDHCP['Ip'] == lan1.globalIp[0] and unknowDHCP['Mac'] == lan1MACUpper and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
     if not checkDHCPv4: WriteLog('False : UnknowDHCPTestCase DHCPv4')
     if not checkDHCPv6: WriteLog('False : UnknowDHCPTestCase DHCPv6')
     if not checkSLAAC: WriteLog('False : UnknowDHCPTestCase SLAAC')
@@ -35,7 +35,7 @@ def BroadcastTesttCase()->None:
     check = False
     lan1.SendARPReply(lan1.Ip,1000)
     time.sleep(120)
-    borDevices = AthenacAPI.GetBrocastDeviceList()
+    borDevices = AthenacWebAPI.GetBrocastDeviceList()
     for borDevice in borDevices:
         if borDevice['Ip'] == lan1.Ip and borDevice['Mac'] == lan1MACUpper: check = True; break
     if not check:WriteLog('False : BrocastcastTest %s'%(lan1.Ip))
@@ -46,7 +46,7 @@ def MultcastTestCase()->None:
     check = False
     lan1.SendNA(lan1.globalIp,1000)
     time.sleep(120)
-    mutidevices = AthenacAPI.GetMulicastDeviceList()
+    mutidevices = AthenacWebAPI.GetMulicastDeviceList()
     for mutidevice in mutidevices:
         if mutidevice['Ip'] == lan1.globalIp[0] and mutidevice['Mac'] == lan1MACUpper: check = True; break
     if not check:WriteLog('False : MultcastTestCase %s'%(lan1.globalIp))
@@ -57,7 +57,7 @@ def OutofVLANTestCase()->None:
     check = False
     lan1.SendARPReply('10.1.1.87')
     time.sleep(10)
-    outofVLANDevices = AthenacAPI.GetOutofVLANList()
+    outofVLANDevices = AthenacWebAPI.GetOutofVLANList()
     for outofVLANDevice in outofVLANDevices:
         if outofVLANDevice['Ip'] == '10.1.1.87' and outofVLANDevice['Mac'] == lan1MACUpper: check = True; break
     if not check: WriteLog('False : OutofVLANTestCase IP: 10.1.1.87')
@@ -76,7 +76,7 @@ def IPconflictTestCase()->None:
         lan2.SendNA(targetipv6)
         time.sleep(2)
     time.sleep(10)
-    IPconflictdevices = AthenacAPI.GetIPconflictDeviceList()
+    IPconflictdevices = AthenacWebAPI.GetIPconflictDeviceList()
     for IPconflictdevice in IPconflictdevices:
         if IPconflictdevice['Ip'] == targetip and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv4 = True; continue
         if IPconflictdevice['Ip'] == targetipv6 and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv6 = True; continue
@@ -94,59 +94,87 @@ def DHCPpressureTestCase()->None:
 
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
-    MacData = AthenacAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
-    AthenacAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=True)
+    MacData = AthenacWebAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
+    AthenacWebAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=True)
     time.sleep(10)
     if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
     if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Reply {TestIPv4}')
     if not lan2.NDPBlockCheck(lan2.globalIp,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globalIp}')
     if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
-    AthenacAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=False)
+    AthenacWebAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=False)
     WriteLog('MACblockTestCaseFinish')
 
 def IPBlockCase()->None:
     WriteLog('IPBlockCaseStart')
-    IPData = AthenacAPI.GetIPv4Detail(lan2.Ip,True)
-    AthenacAPI.BlockIPv4(IPData[0]['HostId'],True)
+    IPData = AthenacWebAPI.GetIPv4Detail(lan2.Ip,True)
+    AthenacWebAPI.BlockIPv4(IPData[0]['HostId'],True)
     time.sleep(10)
     if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
     if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False :Change IP Not Recive ARP Rqply {TestIPv4}')
-    AthenacAPI.BlockIPv4(IPData[0]['HostId'],False)
+    AthenacWebAPI.BlockIPv4(IPData[0]['HostId'],False)
     WriteLog('IPBlockCaseFinish')
 
 def RadiusDynamicVLANTestCase()->None:
     WriteLog('RadiusDynamicVLANTestCaseStart')
-    AthenacAPI.UpdateRadiusSetting()
-    AthenacAPI.ClearAllRadiusClientatSite()
-    AthenacAPI.AddRadiusClient()
-    AthenacAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    AthenacWebAPI.UpdateRadiusSetting()
+    AthenacWebAPI.ClearAllRadiusClientatSite()
+    AthenacWebAPI.ClearAllRadiusClientatSite()
+    AthenacWebAPI.AddRadiusClient()
+    AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     dynamicset = RadiusSetting() 
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
-        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {lan1replyvlanid}')
-    elif not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply')
-    AthenacAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from External Default VLAN')
+    elif lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {lan1replyvlanid} from External Default VLAN')
+    AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
-        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid}')
-    elif not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply')
-    AthenacAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value,21)
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from InternalDefaultVLan')
+    elif lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
+    AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value,21)
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if lan1replyvlanid != '21':
-        WriteLog(f'False : Recive not VLAN ID 21 is VLAN ID {lan1replyvlanid}')
-    elif not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply')
-    AthenacAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from VLAN Mapping List')
+    elif lan1replyvlanid != '21':
+        WriteLog(f'False : Recive not VLAN ID 21 is VLAN ID {lan1replyvlanid} from VLAN Mapping List')
+    AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     WriteLog('RadiusDynamicVLANTestCaseFinish')
-        
+    
+def RadiusCoATestCase()->None:
+    WriteLog('RadiusCoATestCaseStart')
+    dynamicset = RadiusSetting()
+    dynamicset.SiteVerifyModule = SiteVerifyModule.EnableDbVerify.value
+    dynamicset.EnableInternalAutoQuarantine = True
+    dynamicset.EnableExternalAutoQuarantine = True
+    dynamicset.EnableInternalOnlineVerification = True
+    dynamicset.EnableExternalOnlineVerification = True
+    AthenacWebAPI.UpdateRadiusSetting(dynamicset)
+    AthenacWebAPI.ClearAllRadiusClientatSite()
+    AthenacWebAPI.ClearAllMappingatSite()
+    AthenacWebAPI.AddRadiusClient()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from ExternalVerifyVLan')
+    elif lan1replyvlanid != str(dynamicset.ExternalVerifyVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalVerifyVLan} is VLAN ID {lan1replyvlanid} from ExternalVerifyVLan')
+    AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from InternalVerifyVLan')
+    elif lan1replyvlanid != str(dynamicset.InternalVerifyVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalVerifyVLan} is VLAN ID {lan1replyvlanid} from InternalVerifyVLan')
+    AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    WriteLog('RadiusCoATestCaseFinish')
+
+
 
 
 serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
-AthenacAPI = AthenacWebAPILibry(f'https://{serverIP}:8001',APIaccount,APIpwd)
+AthenacWebAPI = AthenacWebAPILibry(f'https://{serverIP}:8001',APIaccount,APIpwd)
 TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
 TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
 ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
@@ -156,13 +184,14 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 # PacketListen(ProbeMAC,lan1.nicName)
-RadiusDynamicVLANTestCase()
+RadiusDynamicVLANTestCase() #use lan1
+RadiusCoATestCase() #use lan1
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
 OutofVLANTestCase() #use lan1
+UnknowDHCPTestCase() # use lan1
 BroadcastTesttCase()#use lan1
 MultcastTestCase() #use lan1
-UnknowDHCPTestCase() # use lan1
 DHCPpressureTestCase() # use lan1
 WriteLog('----------------------TestFinish from All TetsCase----------------------')

@@ -7,7 +7,7 @@ from APITools.Enums.enum_flag import RadiusVLANMappingType
 
 AthenacAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
 time.sleep(3)
-AthenacAPI.DelVLANMapping('005056AEAA69',RadiusVLANMappingType.MAC.value)
+AthenacAPI.ClearAllMappingatSite()
 
 
 if target := AthenacAPI.GetVLANMapping('AAAAAAAAAAAB',RadiusVLANMappingType.MAC.value):

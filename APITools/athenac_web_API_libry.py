@@ -193,6 +193,13 @@ class AthenacWebAPILibry:
         else:
             requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
     
+    def ClearAllMappingatSite(self,siteid:int=1)->None:
+        vlanmappings = self.GetVLANMappingList(siteid)
+        for vlanmapping in vlanmappings:
+            Path = f'/api/Site/RadiusVLanMapping/{str(vlanmapping["Id"])}'
+            Header = {'Authorization':self.Token}
+            requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+
     def DelVLANMapping(self,name:str,Type:int,siteid:int =1)->None:
         if vlanmappingdata:= self.GetVLANMapping(name,Type,siteid):
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmappingdata["Id"])}'
@@ -200,26 +207,33 @@ class AthenacWebAPILibry:
             requests.delete(self.ServerIP+Path,headers=Header,verify=False)
     
     def GetVLANMapping(self,name:str,Type:int,siteid:int=1)->dict:
-        Path = f'/api/Site/{siteid}/VLanMapping'
+        r = self.GetVLANMappingList(siteid)
+        for i in r:
+            if i['MappingValue'] == name and i['MappingValueType'] == Type: #Type 1 = MAC , 2 = Account
+                return i
+    
+    def GetVLANMappingList(self,siteid:int=1)->list[dict]:
+        Path = f'/api/Site/{str(siteid)}/VLanMapping'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {'take':0}
+        result = []
         r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         r = json.loads(r.text)['Data']
         for i in r:
-            if i['MappingValue'] == name and i['MappingValueType'] == Type: #Type 1 = MAC , 2 = Account
-                return {'AssignVlan':i['AssignVlan']
+            result.append({'AssignVlan':i['AssignVlan']
                         ,'Id':i['Id']
                         ,'MappingValue':i['MappingValue']
                         ,'MappingValueType':i['MappingValueType']
                         ,'SiteId':i['SiteId']
-                        ,'SiteName':i['SiteName']}
+                        ,'SiteName':i['SiteName']})
+        return result
 
     def AddRadiusClient(self,Data:RadiusClient=RadiusClient())->None:
         Path = '/api/Site/RadiusClient'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
-    def ClearAllRadiusClientatSite(self,siteid:int=1)->list:
+    def ClearAllRadiusClientatSite(self,siteid:int=1)->None:
         radiusclients = self.GetRadiusClientList(1)
         for radiuscilient in radiusclients:
             self.DelRadiusClient(radiuscilient['Id'])
