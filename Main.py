@@ -1,10 +1,12 @@
+import threading
 import time
 import datetime
-from APITools.DataModels.datamodel_apidata import RadiusSetting
 from NetPacketTools.packet_action import PacketAction
-from NetPacketTools.packet_listen import PacketListen
+from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
+from APITools.DataModels.datamodel_apidata import RadiusSetting
+
 
 
 def WriteLog(Txt:str)->None:
@@ -154,17 +156,46 @@ def RadiusCoATestCase()->None:
     AthenacWebAPI.ClearAllRadiusClientatSite()
     AthenacWebAPI.ClearAllMappingatSite()
     AthenacWebAPI.AddRadiusClient()
+
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
     if not lan1replyvlanid:
         WriteLog('False : not Recive Radius Reply from ExternalVerifyVLan')
     elif lan1replyvlanid != str(dynamicset.ExternalVerifyVLan):
         WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalVerifyVLan} is VLAN ID {lan1replyvlanid} from ExternalVerifyVLan')
+    
+    listtens = PacketListenFromFilter(lan1.nicname)
+    t1 = threading.Thread(target=listtens.Sniffer,args=['udp and port 3799',300])
+    t1.start()
+    #要實作打 API 給 Core 來做帳號驗證解除上線未驗證封鎖
+    time.sleep(5)
+    if not listtens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from External Default VLAN')
+    else: listtens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from External Default VLAN')
+    elif lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan} is VLAN ID {lan1replyvlanid} from External Default VLAN')
+
+
     AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
     if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from InternalVerifyVLan')
+        WriteLog('False : not Recive Radius Reply from Internal Verify VLAN')
     elif lan1replyvlanid != str(dynamicset.InternalVerifyVLan):
-        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalVerifyVLan} is VLAN ID {lan1replyvlanid} from InternalVerifyVLan')
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalVerifyVLan} is VLAN ID {lan1replyvlanid} from Internal Verify VLAN')
+    #要實作打 API 給 Core 來做帳號驗證解除上線未驗證封鎖
+    time.sleep(5)
+    if not listtens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from Internal Default VLAN')
+    else: listtens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if not lan1replyvlanid:
+        WriteLog('False : not Recive Radius Reply from Internal Default VLAN')
+    elif lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
+
+
     AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     WriteLog('RadiusCoATestCaseFinish')
 
@@ -183,9 +214,9 @@ lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
 lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
-# PacketListen(ProbeMAC,lan1.nicName)
+
 RadiusDynamicVLANTestCase() #use lan1
-RadiusCoATestCase() #use lan1
+# RadiusCoATestCase() #use lan1
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
