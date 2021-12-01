@@ -3,6 +3,7 @@ import datetime
 from scapy import *
 from NetPacketTools.packet_action import PacketAction
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
+from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from NetPacketTools.packet_action_test import PacketActionTest
@@ -18,10 +19,14 @@ import hashlib
 # print(iv.decode())
 # pass
 
-CoATest= PacketActionTest()
-CoATest.SendRadiusCoARequest()
-CoATest.CalculateHashFromPacket()
+Action = AthenacCoreAPILibry('https://192.168.21.180:18000')
+Action.AuthMACFromApply()
 pass
+
+# CoATest= PacketActionTest()
+# CoATest.SendRadiusCoARequest()
+# CoATest.CalculateHashFromPacket()
+# pass
 
 
 # listen = PacketListenFromFilter('Ethernet1')
@@ -35,7 +40,7 @@ pass
 
 # a= radiuspacket[0]['packet'].attributes[1].value
 # print(a)
-pass
+
 
 
 
