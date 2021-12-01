@@ -40,5 +40,4 @@ class PacketListenFromFilter:
         # print(f'{str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))} Other Packet : {Packet.summary()}')
     
     def GetRadiusPacket(self,Packet)->None:
-        print('True')
         self.radiuspackets.append({'time':datetime.datetime.now(),'packet':Packet})

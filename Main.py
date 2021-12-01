@@ -7,8 +7,6 @@ from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
 from APITools.DataModels.datamodel_apidata import RadiusSetting
 
-
-
 def WriteLog(Txt:str)->None:
     with open('TestLog.txt','a') as f:
         f.write(str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))+' : '+Txt+'\n')
@@ -156,6 +154,7 @@ def RadiusCoATestCase()->None:
     AthenacWebAPI.ClearAllRadiusClientatSite()
     AthenacWebAPI.ClearAllMappingatSite()
     AthenacWebAPI.AddRadiusClient()
+    
 
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
     if not lan1replyvlanid:
@@ -164,8 +163,8 @@ def RadiusCoATestCase()->None:
         WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalVerifyVLan} is VLAN ID {lan1replyvlanid} from ExternalVerifyVLan')
     
     listtens = PacketListenFromFilter(lan1.nicname)
-    t1 = threading.Thread(target=listtens.Sniffer,args=['udp and port 3799',300])
-    t1.start()
+    CoAPacketCheck = threading.Thread(target=listtens.Sniffer,args=['udp and port 3799',300])
+    CoAPacketCheck.start()
     #要實作打 API 給 Core 來做帳號驗證解除上線未驗證封鎖
     time.sleep(5)
     if not listtens.radiuspackets:
@@ -205,7 +204,7 @@ def RadiusCoATestCase()->None:
 serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
-AthenacWebAPI = AthenacWebAPILibry(f'https://{serverIP}:8001',APIaccount,APIpwd)
+AthenacWebAPI = AthenacWebAPILibry(f'http://{serverIP}:8000',APIaccount,APIpwd)
 TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
 TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
 ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
@@ -215,8 +214,9 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 
+
+RadiusCoATestCase() #use lan1
 RadiusDynamicVLANTestCase() #use lan1
-# RadiusCoATestCase() #use lan1
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
