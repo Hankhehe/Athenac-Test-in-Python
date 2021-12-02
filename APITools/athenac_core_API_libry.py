@@ -7,7 +7,7 @@ class AthenacCoreAPILibry:
         self.PixisProbeId = pixisprobeid
         self.ProbeDaemonId = probedaemonId
 
-    def AuthMACFromApply(self,ip:str,mac:str)->None:
+    def AuthMACFromUserApplybyDB(self,ip:str,mac:str)->None:
         Path = '/PortworkerReport'
         Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
         authdata = {'ActionCode':2305

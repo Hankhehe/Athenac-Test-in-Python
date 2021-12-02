@@ -4,6 +4,7 @@ import datetime
 from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
+from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
 from APITools.DataModels.datamodel_apidata import RadiusSetting
 
@@ -123,88 +124,112 @@ def RadiusDynamicVLANTestCase()->None:
     AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     dynamicset = RadiusSetting() 
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from External Default VLAN')
-    elif lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
+    if lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
         WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {lan1replyvlanid} from External Default VLAN')
     AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from InternalDefaultVLan')
-    elif lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
+    if lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
         WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
     AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value,21)
     lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from VLAN Mapping List')
-    elif lan1replyvlanid != '21':
+    if lan1replyvlanid != '21':
         WriteLog(f'False : Recive not VLAN ID 21 is VLAN ID {lan1replyvlanid} from VLAN Mapping List')
     AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     WriteLog('RadiusDynamicVLANTestCaseFinish')
-    
-def RadiusCoATestCase()->None:
+
+def RadiusCoATestCasebyQuar()->None:
     WriteLog('RadiusCoATestCaseStart')
     dynamicset = RadiusSetting()
     dynamicset.SiteVerifyModule = SiteVerifyModule.EnableDbVerify.value
     dynamicset.EnableInternalAutoQuarantine = True
     dynamicset.EnableExternalAutoQuarantine = True
-    dynamicset.EnableInternalOnlineVerification = True
-    dynamicset.EnableExternalOnlineVerification = True
     AthenacWebAPI.UpdateRadiusSetting(dynamicset)
     AthenacWebAPI.ClearAllRadiusClientatSite()
     AthenacWebAPI.ClearAllMappingatSite()
     AthenacWebAPI.AddRadiusClient()
-    
-
-    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from ExternalVerifyVLan')
-    elif lan1replyvlanid != str(dynamicset.ExternalVerifyVLan):
-        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalVerifyVLan} is VLAN ID {lan1replyvlanid} from ExternalVerifyVLan')
-    
-    listtens = PacketListenFromFilter(lan1.nicname)
-    CoAPacketCheck = threading.Thread(target=listtens.Sniffer,args=['udp and port 3799',300])
-    CoAPacketCheck.start()
-    #要實作打 API 給 Core 來做帳號驗證解除上線未驗證封鎖
-    time.sleep(5)
-    if not listtens.radiuspackets:
-        WriteLog('False : not Recive CoA Packet from External Default VLAN')
-    else: listtens.radiuspackets.clear()
-    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from External Default VLAN')
-    elif lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
+    listens = PacketListenFromFilter(lan1.nicname)
+    CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',60*30])
+    CoAPacketCheck.start() #Packet listen start
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId'] #Test external default VLAN
+    if lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
         WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan} is VLAN ID {lan1replyvlanid} from External Default VLAN')
-
-
+    lan1.SendDHCPv4Offer() #Known DHCPv4 test by external MAC
+    time.sleep(10)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by DHCPv4')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv4')
+    lan1.SendDHCPv6Advertise() #Known DHCPv6 test by external MAC
+    time.sleep(10)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by DHCPv6')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv6')
+    lan1.SendARPReply(lan1.Ip,1000) #Broadcast test by external MAC
+    time.sleep(140)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by Broadcast')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Broadcast')
+    lan1.SendNA(lan1.globalIp,1000) #Muticast test by external MAC
+    time.sleep(140)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by Muticast')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
     AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
-    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from Internal Verify VLAN')
-    elif lan1replyvlanid != str(dynamicset.InternalVerifyVLan):
-        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalVerifyVLan} is VLAN ID {lan1replyvlanid} from Internal Verify VLAN')
-    #要實作打 API 給 Core 來做帳號驗證解除上線未驗證封鎖
-    time.sleep(5)
-    if not listtens.radiuspackets:
-        WriteLog('False : not Recive CoA Packet from Internal Default VLAN')
-    else: listtens.radiuspackets.clear()
-    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
-    if not lan1replyvlanid:
-        WriteLog('False : not Recive Radius Reply from Internal Default VLAN')
-    elif lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId'] #Test internal default VLAN
+    if lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
         WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
-
-
+    lan1.SendDHCPv4Offer() #Known DHCPv4 test by internal MAC
+    time.sleep(10)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by DHCPv4')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by DHCPv4')
+    lan1.SendDHCPv6Advertise() #Known DHCPv6 test by internal MAC
+    time.sleep(10)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by DHCPv6')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by DHCPv6')
+    lan1.SendARPReply(lan1.Ip,1000) #Broadcast test by internal MAC
+    time.sleep(140)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by Broadcast')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
+        WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by Broadcast')
+    lan1.SendNA(lan1.globalIp,1000) #Muticast test by internal MAC
+    time.sleep(140)
+    if not listens.radiuspackets:
+        WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by Muticast')
+    else: listens.radiuspackets.clear()
+    lan1replyvlanid = lan1.GetRadiusReply(serverIP,lan1.Ip)['VLANId']
+    if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
+        WriteLog(f'False :  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
     AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
     WriteLog('RadiusCoATestCaseFinish')
 
-
-
-
+    
 serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
 AthenacWebAPI = AthenacWebAPILibry(f'http://{serverIP}:8000',APIaccount,APIpwd)
+AthenacCoreAPI = AthenacCoreAPILibry(f'https://{serverIP}:18000',input('Please input Probe ID : ') or '10925416137',input('Please input Daemon ID : ') or '6922375401')
 TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
 TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
 ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
@@ -215,14 +240,15 @@ lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 
 
-RadiusCoATestCase() #use lan1
-RadiusDynamicVLANTestCase() #use lan1
+
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
 OutofVLANTestCase() #use lan1
 UnknowDHCPTestCase() # use lan1
 BroadcastTesttCase()#use lan1
+RadiusCoATestCasebyQuar() #use lan1
+RadiusDynamicVLANTestCase() #use lan1
 MultcastTestCase() #use lan1
 DHCPpressureTestCase() # use lan1
 WriteLog('----------------------TestFinish from All TetsCase----------------------')

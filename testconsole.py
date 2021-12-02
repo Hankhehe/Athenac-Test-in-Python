@@ -10,6 +10,9 @@ from NetPacketTools.packet_action_test import PacketActionTest
 import threading
 import hashlib
 
+
+
+
 # cryptokey = b'WeArePIXIS_WeArePIXIS_WeArePIXIS'
 # key = hashlib.sha256(cryptokey).digest()
 # iv =  hashlib.md5(cryptokey).digest()
@@ -19,8 +22,13 @@ import hashlib
 # print(iv.decode())
 # pass
 
-Action = AthenacCoreAPILibry('https://192.168.21.180:18000')
-Action.AuthMACFromApply()
+Action = PacketAction('Ethernet1')
+print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
+# WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
+
+CoreAPI = AthenacCoreAPILibry('https://192.168.21.180:18000','10925416137','6922375401')
+CoreAPI.AuthMACFromUserApplybyDB('192.168.21.10','005056AE6A4E')
+print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
 pass
 
 # CoATest= PacketActionTest()
