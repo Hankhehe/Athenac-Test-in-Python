@@ -11,26 +11,18 @@ import threading
 import hashlib
 
 
+# Action = PacketAction('Ethernet1')
+# print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
 
-
-# cryptokey = b'WeArePIXIS_WeArePIXIS_WeArePIXIS'
-# key = hashlib.sha256(cryptokey).digest()
-# iv =  hashlib.md5(cryptokey).digest()
-# print(type(key))
-# print(type(iv))
-# print(key.decode())
-# print(iv.decode())
+# CoreAPI = AthenacCoreAPILibry('https://192.168.21.180:18000','10925416137','6922375401')
+# CoreAPI.AuthMACFromUserApplybyDB('192.168.21.10','005056AE6A4E')
+# print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
 # pass
 
-Action = PacketAction('Ethernet1')
-print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
-# WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
-
-CoreAPI = AthenacCoreAPILibry('https://192.168.21.180:18000','10925416137','6922375401')
-CoreAPI.AuthMACFromUserApplybyDB('192.168.21.10','005056AE6A4E')
-print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
+Action = PacketAction('Ethernet2')
+WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
+WebAPI.SwitchMACSiteSafeMode(False)
 pass
-
 # CoATest= PacketActionTest()
 # CoATest.SendRadiusCoARequest()
 # CoATest.CalculateHashFromPacket()

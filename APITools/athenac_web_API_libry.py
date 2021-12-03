@@ -4,6 +4,7 @@ from urllib import parse
 import time
 import threading
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient
+from NetPacketTools.packet_action import PacketAction
 
 class AthenacWebAPILibry:
     def __init__(self,ServerIP:str,Account:str,Pwd:str) -> None:
@@ -144,13 +145,13 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
     
-    def BlockMAC(self,macid:str,block:bool)->None:
+    def BlockMAC(self,macid:int,block:bool)->None:
         if block: Path = '/api/Hosts/BlockMac/'+str(macid)
         else: Path = '/api/Hosts/UnblockMac/'+str(macid)
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def BlockIPv4(self,hostid:str,block:bool)->None:
+    def BlockIPv4(self,hostid:int,block:bool)->None:
         if block: Path ='/api/Hosts/BlockIp/V4/'+str(hostid)
         else: Path = '/api/Hosts/UnBlockIp/V4/'+str(hostid)
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
@@ -242,3 +243,13 @@ class AthenacWebAPILibry:
         Path = f'/api/Site/RadiusClient/{str(id)}'
         Header = {'Authorization':self.Token}
         requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+
+    def SwitchMACSiteSafeMode(self,enable:bool,siteid:int=1)->None:
+        Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+    
+    def SwitchIPSiteSafeMode(self,enable:bool,siteid:int=1)->None:
+        Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)

@@ -133,6 +133,9 @@ def RadiusDynamicVLANTestCase()->None:
     if lan1replyvlanid != '21':
         WriteLog(f'False : Recive not VLAN ID 21 is VLAN ID {lan1replyvlanid} from VLAN Mapping List')
     AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    dynamicset.EnableDynamicVLAN = False
+    dynamicset.EnableRadius = False
+    AthenacWebAPI.UpdateRadiusSetting(dynamicset)
     WriteLog('RadiusDynamicVLANTestCaseFinish')
 
 def RadiusCoATestCasebyQuar()->None:
@@ -220,9 +223,40 @@ def RadiusCoATestCasebyQuar()->None:
     if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
         WriteLog(f'False :  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
     AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
+    dynamicset.EnableDynamicVLAN = False
+    dynamicset.EnableRadius = False
+    dynamicset.EnableInternalAutoQuarantine =False
+    dynamicset.EnableExternalAutoQuarantine = False
+    AthenacWebAPI.UpdateRadiusSetting(dynamicset)
     WriteLog('RadiusCoATestCaseFinish')
 
-    
+def UnauthMACBlockTestCase()->None:
+    WriteLog('UnauthMACBlockTestCaseStart')
+    AthenacWebAPI.SwitchMACSiteSafeMode(True)
+    MacData = AthenacWebAPI.GetMACDetail(MAC=lan2MACUpper,Isonline=True,SiteId=1)
+    AthenacWebAPI.AuthMAC(macid=MacData[0]['MacAddressId'],auth=False)
+    time.sleep(10)
+    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
+    if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Recive ARP Reply {TestIPv4} by Change IP')
+    if not lan2.NDPBlockCheck(lan2.globalIp,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globalIp}')
+    if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
+    AthenacWebAPI.AuthMAC(macid=MacData[0]['MacAddressId'],auth=True)
+    AthenacWebAPI.SwitchMACSiteSafeMode(False)
+    WriteLog('UnauthMACBlockTestCaseFinish')
+
+def UnauthIPBlockTestCase()->None:
+    WriteLog('UnauthIPBlockTestCaseStart')
+    AthenacWebAPI.SwitchIPSiteSafeMode(True)
+    IPData = AthenacWebAPI.GetIPv4Detail(lan2.Ip,True)
+    AthenacWebAPI.AuthIP(IPData[0]['HostId'],False)
+    time.sleep(10)
+    if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
+    if lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Recive ARP Rqply {TestIPv4} by Change IP')
+    AthenacWebAPI.AuthIP(IPData[0]['HostId'],True)
+    AthenacWebAPI.SwitchIPSiteSafeMode(False)
+    WriteLog('UnauthIPBlockTestCaseFinish')
+
+
 serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
 APIpwd = input('Please input Athenac password : ') or 'admin'
@@ -237,14 +271,16 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 
-IPBlockCase() #use lan1 and lan2
-MACblockTestCase() # use lan1 and lan2
-IPconflictTestCase() # use lan1 and lan2
-OutofVLANTestCase() #use lan1
-UnknowDHCPTestCase() # use lan1
-BroadcastTesttCase()#use lan1
-MultcastTestCase() #use lan1
-# DHCPpressureTestCase() # use lan1
-RadiusDynamicVLANTestCase() #use lan1
-RadiusCoATestCasebyQuar() #use lan1
+# IPBlockCase() #use lan1 and lan2
+# MACblockTestCase() # use lan2
+# UnauthIPBlockTestCase() # use lan2
+# UnauthMACBlockTestCase() # use lan2
+# IPconflictTestCase() # use lan1 and lan2
+# OutofVLANTestCase() #use lan1
+# UnknowDHCPTestCase() # use lan1
+# BroadcastTesttCase()#use lan1
+# MultcastTestCase() #use lan1
+DHCPpressureTestCase() # use lan1
+# RadiusDynamicVLANTestCase() #use lan1
+# RadiusCoATestCasebyQuar() #use lan1
 WriteLog('----------------------TestFinish from All TetsCase----------------------')
