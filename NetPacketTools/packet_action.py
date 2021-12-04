@@ -75,7 +75,7 @@ class PacketAction:
                                     /DHCP6OptOptReq()
             resultACK6 ,numACK6 = srp(DHCPv6Request,timeout=20,iface=self.nicname)
             if not resultACK6:
-               logStr+='No receive DHCPv6 ACK ID: %s | IP: %s \n' %(tranId,resultACK6[0][1][DHCP6OptIAAddress].addr)
+               logStr+='No receive DHCPv6 ACK ID: %s | IP: %s \n' %(tranId,Iana[0][1][DHCP6OptIAAddress].addr)
          tranId+=1
          fakeMACNum+=1
       return logStr

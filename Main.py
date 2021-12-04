@@ -271,16 +271,16 @@ lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
 
 
-# IPBlockCase() #use lan1 and lan2
-# MACblockTestCase() # use lan2
-# UnauthIPBlockTestCase() # use lan2
-# UnauthMACBlockTestCase() # use lan2
-# IPconflictTestCase() # use lan1 and lan2
-# OutofVLANTestCase() #use lan1
-# UnknowDHCPTestCase() # use lan1
-# BroadcastTesttCase()#use lan1
-# MultcastTestCase() #use lan1
-DHCPpressureTestCase() # use lan1
-# RadiusDynamicVLANTestCase() #use lan1
-# RadiusCoATestCasebyQuar() #use lan1
+IPBlockCase() #use lan1 and lan2
+MACblockTestCase() # use lan2
+UnauthIPBlockTestCase() # use lan2
+UnauthMACBlockTestCase() # use lan2
+IPconflictTestCase() # use lan1 and lan2
+OutofVLANTestCase() #use lan1
+UnknowDHCPTestCase() # use lan1
+BroadcastTesttCase()#use lan1
+MultcastTestCase() #use lan1
+# DHCPpressureTestCase() # use lan1
+RadiusDynamicVLANTestCase() #use lan1
+RadiusCoATestCasebyQuar() #use lan1
 WriteLog('----------------------TestFinish from All TetsCase----------------------')
