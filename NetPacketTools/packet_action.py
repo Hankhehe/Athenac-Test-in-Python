@@ -84,6 +84,7 @@ class PacketAction:
       ARPRequest = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
          /ARP(op=1,hwsrc=self.mac, hwdst="00:00:00:00:00:00",psrc=srcIP, pdst=dstIP)
       result ,nums = srp(ARPRequest, retry=2,timeout=5,iface=self.nicname,multi=True)
+      if not result : return
       for s, r in result:
          if r[ARP].hwsrc == ProbeMAC:
             return True
@@ -94,6 +95,7 @@ class PacketAction:
          /IPv6(src=srcIP,dst='ff02::1')\
             /ICMPv6ND_NS(tgt=dstIP)
       result ,nums = srp(NDPSolic,retry=2,timeout=5,iface=self.nicname,multi=True)
+      if not result: return
       for s, r in result:
          if r[ICMPv6NDOptDstLLAddr].lladdr == ProbeMAC:
             return True
@@ -153,6 +155,7 @@ class PacketAction:
             /UDP(sport =51818,dport=1812)\
                /Radius(authenticator=b'pixis',attributes=[RadiusAttr_NAS_IP_Address(value=nasip.encode('utf-8')),RadiusAttribute(type=31,len=19,value=self.mac.encode('utf-8'))])
       result ,nums =srp(RadiusReq,retry=3,timeout=5,iface=self.nicname)
+      if not result : return
       if len(result[0][1][Radius].attributes) > 1 :
          return {'RadiusCode':result[0][1][Radius].code,'VLANId':result[0][1][Radius].attributes[1].value.decode('utf-8')}
       else : 
