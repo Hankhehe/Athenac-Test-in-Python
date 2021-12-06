@@ -157,12 +157,12 @@ def RadiusDynamicVLANTestCase()->None:
             if radiusresult['VLANId'] != str(dynamicset.InternalDefaultVLan):
                 WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {radiusresult["VLANId"]} from Internal Default VLAN')
         radiusresult = None
-        AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value,21)
+        AthenacWebAPI.AddVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value,int(VLANIDMapping))
         radiusresult = lan1.GetRadiusReply(serverIP,lan1.Ip)
         if not radiusresult : WriteLog('False : not Recived Radius Reply Packet from VLAN Mapping List')
         else:
-            if radiusresult['VLANId'] != '21':
-                WriteLog(f'False : Recive not VLAN ID 21 is VLAN ID {radiusresult["VLANId"]} from VLAN Mapping List')
+            if radiusresult['VLANId'] != VLANIDMapping:
+                WriteLog(f'False : Recive not VLAN ID {VLANIDMapping} is VLAN ID {radiusresult["VLANId"]} from VLAN Mapping List')
         AthenacWebAPI.DelVLANMapping(lan1MACUpper,RadiusVLANMappingType.MAC.value)
         dynamicset.EnableDynamicVLAN = False
         dynamicset.EnableRadius = False
@@ -332,6 +332,7 @@ AthenacCoreAPI = AthenacCoreAPILibry(f'https://{serverIP}:18000',settingconfig['
 TestIPv4 = settingconfig['TestIPv4']
 TestIPv6 = settingconfig['TestIPv6']
 ProbeMAC = settingconfig['ProbeMAC']
+VLANIDMapping = settingconfig['VLANIDMapping']
 lan1 = PacketAction(settingconfig['lan1'])
 lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
 lan2 = PacketAction(settingconfig['lan2'])
