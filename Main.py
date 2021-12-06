@@ -1,6 +1,4 @@
-import threading
-import time
-import datetime
+import threading,time,datetime,codecs,json
 from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
@@ -9,7 +7,7 @@ from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
 from APITools.DataModels.datamodel_apidata import RadiusClient, RadiusSetting
 
 def WriteLog(Txt:str)->None:
-    with open('TestLog.txt','a') as f:
+    with codecs.open('TestLog.txt','a','utf-8') as f:
         f.write(str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))+' : '+Txt+'\n')
 
 def UnknowDHCPTestCase()->None:
@@ -84,16 +82,16 @@ def IPconflictTestCase()->None:
         for i in range(10):
             lan1.SendARPReply(TestIPv4)
             lan2.SendARPReply(TestIPv4)
-            lan1.SendNA(TesteIPv6)
-            lan2.SendNA(TesteIPv6)
+            lan1.SendNA(TestIPv6)
+            lan2.SendNA(TestIPv6)
             time.sleep(2)
         time.sleep(10)
         IPconflictdevices = AthenacWebAPI.GetIPconflictDeviceList()
         for IPconflictdevice in IPconflictdevices:
             if IPconflictdevice['Ip'] == TestIPv4 and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv4 = True; continue
-            if IPconflictdevice['Ip'] == TesteIPv6 and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv6 = True; continue
+            if IPconflictdevice['Ip'] == TestIPv6 and lan1MACUpper in IPconflictdevice['Macs'] and lan2MACUpper in IPconflictdevice['Macs']:checkv6 = True; continue
         if not checkv4 : WriteLog(f'False : IPconflictTestCase {TestIPv4}')
-        if not checkv6 : WriteLog(f'False : IPconflictTestCase {TesteIPv6}')
+        if not checkv6 : WriteLog(f'False : IPconflictTestCase {TestIPv6}')
     except Exception as e:
         WriteLog('Exception : ' + str(e))
     WriteLog('IPconflictTestCaseSFinish')
@@ -118,7 +116,7 @@ def MACblockTestCase()->None:
         if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
         if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Recive ARP Reply {TestIPv4} by Change IP')
         if not lan2.NDPBlockCheck(lan2.globalIp,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globalIp}')
-        if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
+        if not lan2.NDPBlockCheck(TestIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TestIPv6}')
         AthenacWebAPI.BlockMAC(macid=MacData[0]['MacAddressId'],block=False)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
@@ -278,7 +276,7 @@ def UnauthMACBlockTestCase()->None:
         if not lan2.ARPBlockCheck(lan2.Ip,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Receive ARP {lan2.Ip}')
         if not lan2.ARPBlockCheck(TestIPv4,lan2.gatewayIp,ProbeMAC):WriteLog(f'False : Not Recive ARP Reply {TestIPv4} by Change IP')
         if not lan2.NDPBlockCheck(lan2.globalIp,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {lan2.globalIp}')
-        if not lan2.NDPBlockCheck(TesteIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TesteIPv6}')
+        if not lan2.NDPBlockCheck(TestIPv6,lan2.gatewatIpv6,ProbeMAC): WriteLog(f'False : Not Receive NDP Adver {TestIPv6}')
         AthenacWebAPI.AuthMAC(macid=MacData[0]['MacAddressId'],auth=True)
         AthenacWebAPI.SwitchMACSiteSafeMode(False)
     except Exception as e:
@@ -323,20 +321,22 @@ def Radius8021XTestCase()->None:
     WriteLog('Radius8021XTestCaseFinish')
 
 
-
-serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
-APIaccount = input('Please input Athenac accountname : ') or 'admin'
-APIpwd = input('Please input Athenac password : ') or 'admin'
+with open('settingconfig.json') as f:
+    configfile = f.read()
+    settingconfig = json.loads(configfile)
+serverIP = settingconfig['serverIP']
+APIaccount = settingconfig['APIaccount']
+APIpwd = settingconfig['APIpwd']
 AthenacWebAPI = AthenacWebAPILibry(f'http://{serverIP}:8000',APIaccount,APIpwd)
-AthenacCoreAPI = AthenacCoreAPILibry(f'https://{serverIP}:18000',input('Please input Probe ID : ') or '10925416137',input('Please input Daemon ID : ') or '6922375401')
-TestIPv4 = input('Please input TestIPv4 : ') or '192.168.21.87'
-TesteIPv6 = input('Please input TestIpv6 GloboalIP : ') or '2001:b030:2133:815::87'
-ProbeMAC = input('Please input ProbeMAC example aa:aa:aa:aa:aa:aa : ') or '00:aa:ff:ae:09:cc'
-lan1 = PacketAction( input('Please auth nic name : ') or 'Ethernet1')
+AthenacCoreAPI = AthenacCoreAPILibry(f'https://{serverIP}:18000',settingconfig['probeID'],settingconfig['daemonID'])
+TestIPv4 = settingconfig['TestIPv4']
+TestIPv6 = settingconfig['TestIPv6']
+ProbeMAC = settingconfig['ProbeMAC']
+lan1 = PacketAction(settingconfig['lan1'])
 lan1MACUpper = ''.join(lan1.mac.upper().split(':'))
-lan2 = PacketAction(input('Please input unauth nic name : ') or 'Ethernet2')
+lan2 = PacketAction(settingconfig['lan2'])
 lan2MACUpper = ''.join(lan2.mac.upper().split(':'))
-
+time.sleep(5)
 
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan2
