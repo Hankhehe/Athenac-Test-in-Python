@@ -8,5 +8,6 @@
     "TestIPv6":"2001:b030:2133:815::87",
     "ProbeMAC":"00:aa:ff:ae:09:cc",
     "lan1":"Ethernet1",
-    "lan2":"Ethernet2"
+    "lan2":"Ethernet2",
+    "VLANIDMapping":"21"
 }
