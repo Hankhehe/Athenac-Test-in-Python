@@ -62,16 +62,14 @@ class PacketAction:
             logStr +='No receive DHCPv6 Advertise ID: %s \n' %(tranId)
          else:
             Iana = resultAdvertise[0][1][DHCP6OptIA_NA]
-            ClientId = resultAdvertise[0][1][DHCP6OptClientId]
-            ServerId = resultAdvertise[0][1][DHCP6OptServerId]
             DHCPv6Request =Ether(src =self.mac,dst='33:33:00:01:00:02')\
                /IPv6(src=self.linklocalIp,dst='ff02::1:2')\
                   /UDP(sport=546,dport=547)\
                      /DHCP6_Request(trid=tranId)\
                         /DHCP6OptElapsedTime()\
-                           /ClientId\
-                              /ServerId\
-                                 /Iana\
+                           /DHCP6OptClientId(duid=resultAdvertise[0][1][DHCP6OptClientId].duid)\
+                              /DHCP6OptServerId(duid= resultAdvertise[0][1][DHCP6OptServerId].duid)\
+                                 /DHCP6OptIA_NA(iaid=resultAdvertise[0][1][DHCP6OptIA_NA].iaid,T1=resultAdvertise[0][1][DHCP6OptIA_NA].T1,T2=resultAdvertise[0][1][DHCP6OptIA_NA].T2,ianaopts=resultAdvertise[0][1][DHCP6OptIA_NA].ianaopts)\
                                     /DHCP6OptOptReq()
             resultACK6 ,numACK6 = srp(DHCPv6Request,timeout=20,iface=self.nicname)
             if not resultACK6:

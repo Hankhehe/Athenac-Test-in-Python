@@ -253,3 +253,7 @@ class AthenacWebAPILibry:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+    
+    def SetProtectIP(self,ip:str,mac:str,host:int)->None:
+        Path = '/api/Hosts/ProtectIpWithMac'
+        pass

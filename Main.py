@@ -101,11 +101,19 @@ def DHCPpressureTestCase()->None:
     try:
         log = lan1.DHCPv4ClientTest()
         WriteLog(log)
+    except Exception as e:
+        WriteLog('Exception : ' + str(e))
+    WriteLog('DHCPpressureTestCaseFinish')
+
+def DHCPv6pressureTestCase()->None:
+    WriteLog('DHCPv6pressureTestCaseStart')
+    try:
         log = lan1.DHCPv6ClientTest()
         WriteLog(log)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
-    WriteLog('DHCPpressureTestCaseFinish')
+    WriteLog('DHCPpv6ressureTestCaseFinish')
+
 
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
@@ -351,5 +359,6 @@ MultcastTestCase() #use lan1
 Radius8021XTestCase() #use lan1
 RadiusDynamicVLANTestCase() #use lan1
 RadiusCoATestCasebyQuar() #use lan1
-# DHCPpressureTestCase() # use lan1
+DHCPpressureTestCase() # use lan1
+DHCPv6pressureTestCase() #use lan1
 WriteLog('----------------------All test are over----------------------------')
