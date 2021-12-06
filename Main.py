@@ -6,7 +6,7 @@ from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
-from APITools.DataModels.datamodel_apidata import RadiusSetting
+from APITools.DataModels.datamodel_apidata import RadiusClient, RadiusSetting
 
 def WriteLog(Txt:str)->None:
     with open('TestLog.txt','a') as f:
@@ -256,6 +256,26 @@ def UnauthIPBlockTestCase()->None:
     AthenacWebAPI.SwitchIPSiteSafeMode(False)
     WriteLog('UnauthIPBlockTestCaseFinish')
 
+def Radius8021XTestCase()->None:
+    WriteLog('Radius8021XTestCaseStart')
+    radiusset = RadiusSetting(EnableDynamicVLAN=False)
+    AthenacWebAPI.UpdateRadiusSetting(radiusset)
+    AthenacWebAPI.ClearAllRadiusClientatSite()
+    AthenacWebAPI.AddRadiusClient(RadiusClient(RadiusAVPId=2))
+    AthenacWebAPI.SwitchMACSiteSafeMode(enable=True)
+    macdata = AthenacWebAPI.GetMACDetail(MAC=lan1MACUpper,Isonline=True,SiteId=1)
+    AthenacWebAPI.AuthMAC(macdata[0]['MacAddressId'],False)
+    radiuscode = lan1.GetRadiusReply(serverIP,lan1.Ip)['RadiusCode']
+    if radiuscode != 3 : WriteLog(f'False : Radius code not 3 is {radiuscode}')
+    AthenacWebAPI.AuthMAC(macdata[0]['MacAddressId'],True)
+    radiuscode = lan1.GetRadiusReply(serverIP,lan1.Ip)['RadiusCode']
+    if radiuscode != 2 : WriteLog(f'False : Radius code not 2 is {radiuscode}')
+    AthenacWebAPI.SwitchMACSiteSafeMode(enable=False)
+    radiusset.EnableRadius = False
+    AthenacWebAPI.UpdateRadiusSetting(radiusset)
+    WriteLog('Radius8021XTestCaseFinish')
+
+
 
 serverIP= input('Please input Athenac Server IP : ') or '192.168.21.180'
 APIaccount = input('Please input Athenac accountname : ') or 'admin'
@@ -281,6 +301,7 @@ UnknowDHCPTestCase() # use lan1
 BroadcastTesttCase()#use lan1
 MultcastTestCase() #use lan1
 # DHCPpressureTestCase() # use lan1
+Radius8021XTestCase() #use lan1
 RadiusDynamicVLANTestCase() #use lan1
 RadiusCoATestCasebyQuar() #use lan1
 WriteLog('----------------------TestFinish from All TetsCase----------------------')

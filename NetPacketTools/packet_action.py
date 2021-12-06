@@ -153,5 +153,8 @@ class PacketAction:
             /UDP(sport =51818,dport=1812)\
                /Radius(authenticator=b'pixis',attributes=[RadiusAttr_NAS_IP_Address(value=nasip.encode('utf-8')),RadiusAttribute(type=31,len=19,value=self.mac.encode('utf-8'))])
       result ,nums =srp(RadiusReq,retry=3,timeout=5,iface=self.nicname)
-      return {'RadiusCode':result[0][1][Radius].code,'VLANId':result[0][1][Radius].attributes[1].value.decode('utf-8')}
+      if len(result[0][1][Radius].attributes) > 1 :
+         return {'RadiusCode':result[0][1][Radius].code,'VLANId':result[0][1][Radius].attributes[1].value.decode('utf-8')}
+      else : 
+         return {'RadiusCode':result[0][1][Radius].code}
       #Radius Code : Accept =2 , Reject =3
