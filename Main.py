@@ -359,6 +359,6 @@ MultcastTestCase() #use lan1
 Radius8021XTestCase() #use lan1
 RadiusDynamicVLANTestCase() #use lan1
 RadiusCoATestCasebyQuar() #use lan1
-DHCPpressureTestCase() # use lan1
-DHCPv6pressureTestCase() #use lan1
+# DHCPpressureTestCase() # use lan1
+# DHCPv6pressureTestCase() #use lan1
 WriteLog('----------------------All test are over----------------------------')
