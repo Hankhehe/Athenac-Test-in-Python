@@ -19,9 +19,11 @@ import hashlib
 # print(Action.GetRadiusReply('192.168.21.180','192.168.21.10'))
 # pass
 
-Action = PacketAction('Ethernet2')
+# Action = PacketAction('Ethernet1')
 WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
-WebAPI.SwitchMACSiteSafeMode(False)
+time.sleep(5)
+WebAPI.CreateProtectIP('192.168.21.231','0026CA61D545',1)
+WebAPI.DelProtectIP('192.168.21.231',1)
 pass
 # CoATest= PacketActionTest()
 # CoATest.SendRadiusCoARequest()

@@ -9,5 +9,8 @@
     "ProbeMAC":"00:aa:ff:ae:09:cc",
     "lan1":"Ethernet1",
     "lan2":"Ethernet2",
-    "VLANIDMapping":"21"
+    "VLANIDMapping":21,
+    "SiteId":1,
+    "DynamicAVPID":1,
+    "AuthAVPID":2
 }

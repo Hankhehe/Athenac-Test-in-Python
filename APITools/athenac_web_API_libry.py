@@ -95,42 +95,48 @@ class AthenacWebAPILibry:
             result.append({'Ip':i['Ip'],'Macs':i['Macs']})
         return result
     
-    def GetMACDetail(self,MAC:str,Isonline:bool,SiteId:int)->list[dict]:
+    def GetMACDetail(self,MAC:str,SiteId:int)->list[dict]:
         Path = '/api/Hosts/Mac'
         Data = {'take':0,"filter":{'logic':'and'
-        ,'filters':[
-            {'field':'Mac','value':MAC,'operator':'eq'}
-            ,{'field':'IsOnline','value':str(Isonline),'operator':'eq'}
-            ,{'field':'SiteId','value':SiteId,'operator':'eq'}]}}
+                    ,'filters':[
+                        {'field':'Mac','value':MAC,'operator':'eq'}
+                            ,{'field':'SiteId','value':SiteId,'operator':'eq'}]}}
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         result=[]
         r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         r=json.loads(r.text)['Data']
         for i in r:
             result.append({'MacAddressId':i['MacAddressId']
-            ,'IsRegisteded':i['IsRegisteded']
             ,'HostName':i['HostName']
             ,'HostWorkgroup':i['HostWorkgroup']
+            ,'IsRegisteded':i['IsRegisteded']
+            ,'RegisterType':i['RegisterType']
+            ,'IsIpBlockByUnAuth':i['IsIpBlockByUnAuth']
             ,'IsPrivileged':i['IsPrivileged']
-            ,'OSType':i['OSType']})
+            ,'IsOnline':i['IsOnline']
+            ,'OSType':i['OSType']
+            ,'SiteId':i['SiteId']})
         return result
     
-    def GetIPv4Detail(self,IP:str,Isonline:bool)->list[dict]:
+    def GetIPv4Detail(self,IP:str,siteid:int=1)->list[dict]:
         Path = '/api/Hosts/Ipv4'
         Data = {'take':0,"filter":{'logic':'and'
-        ,'filters':[
-            {'field':'IpInfo.Ip','value':IP,'operator':'eq'}
-            ,{'field':'IsOnline','value':str(Isonline),'operator':'eq'}
-            ]}}
+                    ,'filters':[
+                        {'field':'IpInfo.Ip','value':IP,'operator':'eq'}]}}
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         result=[]
         r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         r=json.loads(r.text)['Data']
         for i in r:
-            result.append({'IpAddressId':i['IpInfo']['IpAddressId']
-            ,'HostId':i['HostId']
-            ,'IsBlockByUnAuth':not i['IpInfo']['BlockingStatus']['IsBlockByUnAuth']
-            ,'SiteId':i['MacInfo']['SiteId']})
+            if int(i['IpInfo']['SiteId']) == siteid:
+                result.append({'IpAddressId':i['IpInfo']['IpAddressId']
+                ,'HostId':i['HostId']
+                ,'Isonline':i['IsOnline']
+                ,'IsGLBP':i['IsGLBP']
+                ,'IsRegisted':i['IpInfo']['IsRegisted']
+                ,'IsBlockByUnAuth':i['IpInfo']['BlockingStatus']['IsBlockByUnAuth']
+                ,'IsImportantIP':i['IpInfo']['IsImportantIP']
+                ,'SiteId':i['IpInfo']['SiteId']})
         return result
     
     def AuthMAC(self,macid:int,auth:bool)->None:
@@ -179,7 +185,7 @@ class AthenacWebAPILibry:
         r:RadiusSetting = json.loads(r.text)
         return r
     
-    def UpdateRadiusSetting(self,Data:RadiusSetting=RadiusSetting())->None:
+    def UpdateRadiusSetting(self,Data:RadiusSetting)->None:
         Path = '/api/Site/Radius'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
@@ -229,13 +235,13 @@ class AthenacWebAPILibry:
                         ,'SiteName':i['SiteName']})
         return result
 
-    def AddRadiusClient(self,Data:RadiusClient=RadiusClient())->None:
+    def AddRadiusClient(self,Data:RadiusClient)->None:
         Path = '/api/Site/RadiusClient'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
     def ClearAllRadiusClientatSite(self,siteid:int=1)->None:
-        radiusclients = self.GetRadiusClientList(1)
+        radiusclients = self.GetRadiusClientList(siteid)
         for radiuscilient in radiusclients:
             self.DelRadiusClient(radiuscilient['Id'])
              
@@ -244,16 +250,41 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token}
         requests.delete(self.ServerIP+Path,headers=Header,verify=False)
 
-    def SwitchMACSiteSafeMode(self,enable:bool,siteid:int=1)->None:
+    def SwitchMACSiteSaveMode(self,enable:bool,siteid:int=1)->None:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
     
-    def SwitchIPSiteSafeMode(self,enable:bool,siteid:int=1)->None:
+    def SwitchIPSiteSaveMode(self,enable:bool,siteid:int=1)->None:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
     
-    def SetProtectIP(self,ip:str,mac:str,host:int)->None:
+    def CreateProtectIP(self,ip:str,mac:str,siteid:int=1)->None:
         Path = '/api/Hosts/ProtectIpWithMac'
-        pass
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        hostid = self.GetIPv4Detail(ip,siteid)[0]['HostId']
+        Data = {'HostId': hostid, 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+    
+    def GetProtectIPDetail(self,ip:str,siteid:int=1)->list[dict]:
+        ipAddressId = self.GetIPv4Detail(ip,siteid)[0]['IpAddressId']
+        Path = f'/api/Hosts/IpProtection/Table/{ipAddressId}'
+        Header = {'Authorization':self.Token}
+        result = []
+        r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        r = json.loads(r.text)
+        for i in r :
+            result.append({'Id':i['Id'],'IP':i['IP'],'MAC':i['MAC']})
+        return result
+
+    def DelProtectIP(self,ip:str,siteid:int=1)->None:
+        ipProtectionIds =self.GetProtectIPDetail(ip,siteid)
+        Header = {'Authorization':self.Token}
+        for ipProtectionId in ipProtectionIds:
+            Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
+            requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+    def DelIP(self,ip:str)->None:
+        hostIds = self.GetIPv4Detail()
+        Path = f'/api/Hosts/Delete/Ip/{hostIds}'
