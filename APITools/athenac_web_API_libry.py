@@ -35,7 +35,7 @@ class AthenacWebAPILibry:
         with open('Log.json','w') as f:
             f.write(json.dumps(r,indent=4,ensure_ascii=False))    
 
-    def GetCustomerFieldInfo(self,Type:int=0)->json:
+    def GetCustomerFieldInfo(self,Type:int)->json:
         if Type > 3 : return 'Unknow Type'
         Path='/api/CustomFieldInfo?customFieldType='+str(Type)
         Header = {'Authorization':self.Token}
@@ -118,7 +118,7 @@ class AthenacWebAPILibry:
             ,'SiteId':i['SiteId']})
         return result
     
-    def GetIPv4Detail(self,IP:str,siteid:int=1)->list[dict]:
+    def GetIPv4Detail(self,IP:str,siteid:int)->list[dict]:
         Path = '/api/Hosts/Ipv4'
         Data = {'take':0,"filter":{'logic':'and'
                     ,'filters':[
@@ -163,7 +163,7 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def GetRadiusClientList(self,siteid:int=1)->list[dict]:
+    def GetRadiusClientList(self,siteid:int)->list[dict]:
         Path = f'/api/Site/{str(siteid)}/RadiusClients'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {'take':0}
@@ -178,7 +178,7 @@ class AthenacWebAPILibry:
             ,'SharedSecret':i['SharedSecret']})
         return result
     
-    def GetRadiusSetting(self,siteid:int=1)->dict:
+    def GetRadiusSetting(self,siteid:int)->dict:
         Path = f'/api/Site/{str(siteid)}/Radius'
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
@@ -190,7 +190,7 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
-    def AddVLANMapping(self,name:str,Type:int,vlanid:int =None,siteid:int=1)->None:
+    def AddVLANMapping(self,name:str,Type:int,vlanid:int,siteid:int)->None:
         Path = '/api/Site/RadiusVLanMapping'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {"AssignVlan": vlanid, "MappingValue": name, "MappingValueType": Type, "SiteId": siteid}
@@ -200,26 +200,26 @@ class AthenacWebAPILibry:
         else:
             requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
     
-    def ClearAllMappingatSite(self,siteid:int=1)->None:
+    def ClearAllMappingatSite(self,siteid:int)->None:
         vlanmappings = self.GetVLANMappingList(siteid)
         for vlanmapping in vlanmappings:
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmapping["Id"])}'
             Header = {'Authorization':self.Token}
             requests.delete(self.ServerIP+Path,headers=Header,verify=False)
 
-    def DelVLANMapping(self,name:str,Type:int,siteid:int =1)->None:
+    def DelVLANMapping(self,name:str,Type:int,siteid:int)->None:
         if vlanmappingdata:= self.GetVLANMapping(name,Type,siteid):
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmappingdata["Id"])}'
             Header = {'Authorization':self.Token}
             requests.delete(self.ServerIP+Path,headers=Header,verify=False)
     
-    def GetVLANMapping(self,name:str,Type:int,siteid:int=1)->dict:
+    def GetVLANMapping(self,name:str,Type:int,siteid:int)->dict:
         r = self.GetVLANMappingList(siteid)
         for i in r:
             if i['MappingValue'] == name and i['MappingValueType'] == Type: #Type 1 = MAC , 2 = Account
                 return i
     
-    def GetVLANMappingList(self,siteid:int=1)->list[dict]:
+    def GetVLANMappingList(self,siteid:int)->list[dict]:
         Path = f'/api/Site/{str(siteid)}/VLanMapping'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {'take':0}
@@ -240,7 +240,7 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
-    def ClearAllRadiusClientatSite(self,siteid:int=1)->None:
+    def ClearAllRadiusClientatSite(self,siteid:int)->None:
         radiusclients = self.GetRadiusClientList(siteid)
         for radiuscilient in radiusclients:
             self.DelRadiusClient(radiuscilient['Id'])
@@ -250,24 +250,24 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token}
         requests.delete(self.ServerIP+Path,headers=Header,verify=False)
 
-    def SwitchMACSiteSaveMode(self,enable:bool,siteid:int=1)->None:
+    def SwitchMACSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
     
-    def SwitchIPSiteSaveMode(self,enable:bool,siteid:int=1)->None:
+    def SwitchIPSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
     
-    def CreateProtectIP(self,ip:str,mac:str,siteid:int=1)->None:
+    def CreateProtectIP(self,ip:str,mac:str,siteid:int)->None:
         Path = '/api/Hosts/ProtectIpWithMac'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         hostid = self.GetIPv4Detail(ip,siteid)[0]['HostId']
         Data = {'HostId': hostid, 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
     
-    def GetProtectIPDetail(self,ip:str,siteid:int=1)->list[dict]:
+    def GetProtectIPDetail(self,ip:str,siteid:int)->list[dict]:
         ipAddressId = self.GetIPv4Detail(ip,siteid)[0]['IpAddressId']
         Path = f'/api/Hosts/IpProtection/Table/{ipAddressId}'
         Header = {'Authorization':self.Token}
@@ -278,7 +278,7 @@ class AthenacWebAPILibry:
             result.append({'Id':i['Id'],'IP':i['IP'],'MAC':i['MAC']})
         return result
 
-    def DelProtectIP(self,ip:str,siteid:int=1)->None:
+    def DelProtectIP(self,ip:str,siteid:int)->None:
         ipProtectionIds =self.GetProtectIPDetail(ip,siteid)
         Header = {'Authorization':self.Token}
         for ipProtectionId in ipProtectionIds:

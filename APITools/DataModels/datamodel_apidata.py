@@ -1,8 +1,8 @@
 class RadiusSetting:
-    def __init__(self,DeviceDivideType:int=2,EnableDynamicVLAN:bool=True,EnableExternalAutoQuarantine:bool=False
+    def __init__(self,SiteId:int,DeviceDivideType:int=2,EnableDynamicVLAN:bool=True,EnableExternalAutoQuarantine:bool=False
     ,EnableExternalOnlineVerification:bool=False,EnableInternalAutoQuarantine:bool=False,EnableInternalOnlineVerification:bool=False
     ,EnableRadius:bool=True,ExternalDefaultVLan:int=81,ExternalQuarantineVLan:int=85,ExternalVerifyVLan:int=83,InternalDefaultVLan:int=80
-    ,InternalQuarantineVLan:int=84,InternalVerifyVLan:int=82,SiteId:int=1,SiteVerifyModule:int=0,VLanMappingType:int=2) -> None:
+    ,InternalQuarantineVLan:int=84,InternalVerifyVLan:int=82,SiteVerifyModule:int=0,VLanMappingType:int=2) -> None:
         self.DeviceDivideType = DeviceDivideType
         self.EnableDynamicVLAN = EnableDynamicVLAN
         self.EnableExternalAutoQuarantine = EnableExternalAutoQuarantine
@@ -21,7 +21,7 @@ class RadiusSetting:
         self.VLanMappingType = VLanMappingType
 
 class RadiusClient:
-    def __init__(self,IP:str='0.0.0.0',RadiusAVPId:int=1,SharedSecret:str='pixis',SiteId:int=1,SubnetMask:str='0') -> None:
+    def __init__(self,SiteId:int,RadiusAVPId:int,IP:str='0.0.0.0',SharedSecret:str='pixis',SubnetMask:str='0') -> None:
         self.IP= IP
         self.RadiusAVPId= RadiusAVPId
         self.SharedSecret= SharedSecret

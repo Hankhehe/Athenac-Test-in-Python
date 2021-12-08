@@ -149,30 +149,29 @@ def RadiusDynamicVLANTestCase()->None:
         dynamicset = RadiusSetting(SiteId=SiteID_)
         radiusclientset = RadiusClient(SiteId=SiteID_,RadiusAVPId=DynamicAVPID_)
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset)
-        AthenacWebAPI_.ClearAllRadiusClientatSite()
-        AthenacWebAPI_.ClearAllRadiusClientatSite()
+        AthenacWebAPI_.ClearAllRadiusClientatSite(siteid=SiteID_)
         AthenacWebAPI_.AddRadiusClient(radiusclientset)
-        AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value)
+        AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         radiusresult = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if not radiusresult : WriteLog('False : not Recived Radius Reply Packet from External Default VLAN')
         else : 
             if radiusresult['VLANId'] != str(dynamicset.ExternalDefaultVLan):
                 WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {radiusresult["VLANId"]} from External Default VLAN')
         radiusresult = None
-        AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value)
+        AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,SiteID_)
         radiusresult = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if not radiusresult : WriteLog('False : not Recived Radius Reply Packet from Internal Default VLAN')
         else:
             if radiusresult['VLANId'] != str(dynamicset.InternalDefaultVLan):
                 WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {radiusresult["VLANId"]} from Internal Default VLAN')
         radiusresult = None
-        AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,int(VLANIDMapping_))
+        AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,VLANIDMapping_,SiteID_)
         radiusresult = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if not radiusresult : WriteLog('False : not Recived Radius Reply Packet from VLAN Mapping List')
         else:
-            if radiusresult['VLANId'] != VLANIDMapping_:
+            if radiusresult['VLANId'] != str(VLANIDMapping_):
                 WriteLog(f'False : Recive not VLAN ID {VLANIDMapping_} is VLAN ID {radiusresult["VLANId"]} from VLAN Mapping List')
-        AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value)
+        AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         dynamicset.EnableDynamicVLAN = False
         dynamicset.EnableRadius = False
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset)
@@ -189,8 +188,8 @@ def RadiusCoATestCasebyQuar()->None:
         dynamicset.EnableInternalAutoQuarantine = True
         dynamicset.EnableExternalAutoQuarantine = True
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset)
-        AthenacWebAPI_.ClearAllRadiusClientatSite()
-        AthenacWebAPI_.ClearAllMappingatSite()
+        AthenacWebAPI_.ClearAllRadiusClientatSite(siteid=SiteID_)
+        AthenacWebAPI_.ClearAllMappingatSite(siteid=SiteID_)
         AthenacWebAPI_.AddRadiusClient(radiusclientset)
         listens = PacketListenFromFilter(lan1_.nicname)
         CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',60*30])
@@ -230,7 +229,7 @@ def RadiusCoATestCasebyQuar()->None:
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
         if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
-        AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value)
+        AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,SiteID_)
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId'] #Test internal default VLAN
         if lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
@@ -266,7 +265,7 @@ def RadiusCoATestCasebyQuar()->None:
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
         if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
             WriteLog(f'False :  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
-        AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value)
+        AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         dynamicset.EnableDynamicVLAN = False
         dynamicset.EnableRadius = False
         dynamicset.EnableInternalAutoQuarantine =False
@@ -279,7 +278,7 @@ def RadiusCoATestCasebyQuar()->None:
 def UnauthMACBlockTestCase()->None:
     WriteLog('UnauthMACBlockTestCaseStart')
     try:
-        AthenacWebAPI_.SwitchMACSiteSaveMode(True)
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         MacData = AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
         AthenacWebAPI_.AuthMAC(macid=MacData[0]['MacAddressId'],auth=False)
         time.sleep(10)
@@ -288,7 +287,7 @@ def UnauthMACBlockTestCase()->None:
         if not lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {lan2_.globalIp}')
         if not lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {TestIPv6_}')
         AthenacWebAPI_.AuthMAC(macid=MacData[0]['MacAddressId'],auth=True)
-        AthenacWebAPI_.SwitchMACSiteSaveMode(False)
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
     WriteLog('UnauthMACBlockTestCaseFinish')
@@ -296,14 +295,14 @@ def UnauthMACBlockTestCase()->None:
 def UnauthIPBlockTestCase()->None:
     WriteLog('UnauthIPBlockTestCaseStart')
     try:
-        AthenacWebAPI_.SwitchIPSiteSaveMode(True)
+        AthenacWebAPI_.SwitchIPSiteSaveMode(enable=True,siteid=SiteID_)
         IPData = AthenacWebAPI_.GetIPv4Detail(lan2_.Ip,SiteID_)
         AthenacWebAPI_.AuthIP(IPData[0]['HostId'],False)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
         if lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
         AthenacWebAPI_.AuthIP(IPData[0]['HostId'],True)
-        AthenacWebAPI_.SwitchIPSiteSaveMode(False)
+        AthenacWebAPI_.SwitchIPSiteSaveMode(enable=False,siteid=SiteID_)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
     WriteLog('UnauthIPBlockTestCaseFinish')
@@ -314,9 +313,9 @@ def Radius8021XTestCase()->None:
         radiusset = RadiusSetting(SiteId=SiteID_,EnableDynamicVLAN=False)
         radiusclientset = RadiusClient(SiteId=SiteID_,RadiusAVPId=AuthAVPID_)
         AthenacWebAPI_.UpdateRadiusSetting(radiusset)
-        AthenacWebAPI_.ClearAllRadiusClientatSite()
+        AthenacWebAPI_.ClearAllRadiusClientatSite(siteid=SiteID_)
         AthenacWebAPI_.AddRadiusClient(radiusclientset)
-        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True)
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         macdata = AthenacWebAPI_.GetMACDetail(MAC=lan1MACUpper_,SiteId=SiteID_)
         AthenacWebAPI_.AuthMAC(macdata[0]['MacAddressId'],False)
         radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['RadiusCode']
@@ -324,7 +323,7 @@ def Radius8021XTestCase()->None:
         AthenacWebAPI_.AuthMAC(macdata[0]['MacAddressId'],True)
         radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['RadiusCode']
         if radiuscode != 2 : WriteLog(f'False : Radius code not 2 is {radiuscode}')
-        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False)
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
         radiusset.EnableRadius = False
         AthenacWebAPI_.UpdateRadiusSetting(radiusset)
     except Exception as e:
@@ -337,8 +336,7 @@ def ProtectIPTestCase()->None:
 
 
 with open('settingconfig.json') as f:
-    configfile_ = f.read()
-    settingconfig_ = json.loads(configfile_)
+    settingconfig_ = json.loads(f.read())
 serverIP_ = settingconfig_['serverIP']
 APIaccount_ = settingconfig_['APIaccount']
 APIpwd_ = settingconfig_['APIpwd']
@@ -366,8 +364,8 @@ time.sleep(5)
 # UnknowDHCPTestCase() # use lan1
 # BroadcastTesttCase()#use lan1
 # MultcastTestCase() #use lan1
-Radius8021XTestCase() #use lan1
-RadiusDynamicVLANTestCase() #use lan1
+# Radius8021XTestCase() #use lan1
+# RadiusDynamicVLANTestCase() #use lan1
 RadiusCoATestCasebyQuar() #use lan1
 # DHCPpressureTestCase() # use lan1
 # DHCPv6pressureTestCase() #use lan1
