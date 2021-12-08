@@ -355,17 +355,17 @@ lan2_ = PacketAction(settingconfig_['lan2'])
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
-# IPBlockCase() #use lan1 and lan2
-# MACblockTestCase() # use lan2
-# UnauthIPBlockTestCase() # use lan2
-# UnauthMACBlockTestCase() # use lan2
-# IPconflictTestCase() # use lan1 and lan2
-# OutofVLANTestCase() #use lan1
-# UnknowDHCPTestCase() # use lan1
-# BroadcastTesttCase()#use lan1
-# MultcastTestCase() #use lan1
-# Radius8021XTestCase() #use lan1
-# RadiusDynamicVLANTestCase() #use lan1
+IPBlockCase() #use lan1 and lan2
+MACblockTestCase() # use lan2
+UnauthIPBlockTestCase() # use lan2
+UnauthMACBlockTestCase() # use lan2
+IPconflictTestCase() # use lan1 and lan2
+OutofVLANTestCase() #use lan1
+UnknowDHCPTestCase() # use lan1
+BroadcastTesttCase()#use lan1
+MultcastTestCase() #use lan1
+Radius8021XTestCase() #use lan1
+RadiusDynamicVLANTestCase() #use lan1
 RadiusCoATestCasebyQuar() #use lan1
 # DHCPpressureTestCase() # use lan1
 # DHCPv6pressureTestCase() #use lan1

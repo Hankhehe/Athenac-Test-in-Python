@@ -1,31 +1,25 @@
-2021-12-06 13:06:14 : IPBlockCaseStart
-2021-12-06 13:06:34 : IPBlockCaseFinish
-2021-12-06 13:06:34 : MACblockTestCaseStart
-2021-12-06 13:07:05 : MACblockTestCaseFinish
-2021-12-06 13:07:05 : UnauthIPBlockTestCaseStart
-2021-12-06 13:07:25 : False : Not Receive ARP 192.168.21.11
-2021-12-06 13:07:30 : UnauthIPBlockTestCaseFinish
-2021-12-06 13:07:30 : UnauthMACBlockTestCaseStart
-2021-12-06 13:08:26 : ('Connection aborted.', ConnectionResetError(10054, '���ݥD���w�j�������@�Ӳ{�s���s�u�C', None, 10054, None))
-2021-12-06 13:08:26 : UnauthMACBlockTestCaseFinish
-2021-12-06 13:08:26 : IPconflictTestCaseStart
-2021-12-06 13:08:57 : IPconflictTestCaseSFinish
-2021-12-06 13:08:57 : OutofVLANTestCaseStart
-2021-12-06 13:09:07 : OutofVLANTestCaseFinish
-2021-12-06 13:09:07 : UnknowDHCPTestCaseStart
-2021-12-06 13:09:17 : UnknowDHCPTestCaseFinish
-2021-12-06 13:09:17 : BroadcastTestCaseStart
-2021-12-06 13:11:26 : BroadcastTestCaseFinish
-2021-12-06 13:11:26 : MuticastTestCaseStart
-2021-12-06 13:13:53 : MuticastTestCaseFinish
-2021-12-06 13:13:53 : Radius8021XTestCaseStart
-2021-12-06 13:13:58 : Radius8021XTestCaseFinish
-2021-12-06 13:13:58 : RadiusDynamicVLANTestCaseStart
-2021-12-06 13:13:59 : RadiusDynamicVLANTestCaseFinish
-2021-12-06 13:13:59 : RadiusCoATestCaseStart
-2021-12-06 13:19:47 : False : not Recive CoA Packet from External Quarantine VLAN by Muticast
-2021-12-06 13:19:47 : False : Recive not VLAN ID 85 is VLAN ID 81 from External Quarantine VLAN by Muticast
-2021-12-06 13:25:20 : False : not Recive CoA Packet from internal Quarantine VLAN by Muticast
-2021-12-06 13:25:20 : False :  Recive not VLAN ID 84 is VLAN ID 80 from internal Quarantine VLAN by Muticast
-2021-12-06 13:25:20 : RadiusCoATestCaseFinish
-2021-12-06 13:25:20 : ----------------------All test are over----------------------------
+2021-12-08 15:59:46 : IPBlockCaseStart
+2021-12-08 16:00:07 : IPBlockCaseFinish
+2021-12-08 16:00:07 : MACblockTestCaseStart
+2021-12-08 16:00:37 : MACblockTestCaseFinish
+2021-12-08 16:00:37 : UnauthIPBlockTestCaseStart
+2021-12-08 16:00:58 : UnauthIPBlockTestCaseFinish
+2021-12-08 16:00:58 : UnauthMACBlockTestCaseStart
+2021-12-08 16:02:03 : UnauthMACBlockTestCaseFinish
+2021-12-08 16:02:03 : IPconflictTestCaseStart
+2021-12-08 16:02:34 : IPconflictTestCaseSFinish
+2021-12-08 16:02:34 : OutofVLANTestCaseStart
+2021-12-08 16:02:44 : OutofVLANTestCaseFinish
+2021-12-08 16:02:44 : UnknowDHCPTestCaseStart
+2021-12-08 16:02:54 : UnknowDHCPTestCaseFinish
+2021-12-08 16:02:54 : BroadcastTestCaseStart
+2021-12-08 16:05:08 : BroadcastTestCaseFinish
+2021-12-08 16:05:08 : MuticastTestCaseStart
+2021-12-08 16:07:29 : MuticastTestCaseFinish
+2021-12-08 16:07:29 : Radius8021XTestCaseStart
+2021-12-08 16:07:43 : Radius8021XTestCaseFinish
+2021-12-08 16:07:43 : RadiusDynamicVLANTestCaseStart
+2021-12-08 16:07:45 : RadiusDynamicVLANTestCaseFinish
+2021-12-08 16:07:45 : RadiusCoATestCaseStart
+2021-12-08 16:18:55 : RadiusCoATestCaseFinish
+2021-12-08 16:18:55 : ----------------------All test are over----------------------------
