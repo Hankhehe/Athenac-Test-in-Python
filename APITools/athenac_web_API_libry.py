@@ -3,6 +3,8 @@ import json
 from urllib import parse
 import time
 import threading
+
+from requests.api import head
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient
 from NetPacketTools.packet_action import PacketAction
 
@@ -285,6 +287,8 @@ class AthenacWebAPILibry:
             Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
             requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def DelIP(self,ip:str)->None:
-        hostIds = self.GetIPv4Detail()
+    def DelIP(self,ip:str,siteid:int)->None:
+        hostIds = self.GetIPv4Detail(ip,siteid)[0]['HostId']
         Path = f'/api/Hosts/Delete/Ip/{hostIds}'
+        Header = {'Authorization':self.Token}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
