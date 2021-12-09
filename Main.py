@@ -118,14 +118,13 @@ def DHCPv6pressureTestCase()->None:
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
     try:
-        MacData = AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
-        AthenacWebAPI_.BlockMAC(macid=MacData[0]['MacAddressId'],block=True)
+        AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=True,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
         if not lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Recive ARP Reply {TestIPv4_} by Change IP')
         if not lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {lan2_.globalIp}')
         if not lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {TestIPv6_}')
-        AthenacWebAPI_.BlockMAC(macid=MacData[0]['MacAddressId'],block=False)
+        AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=False,siteid=SiteID_)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
     WriteLog('MACblockTestCaseFinish')
@@ -133,12 +132,11 @@ def MACblockTestCase()->None:
 def IPBlockCase()->None:
     WriteLog('IPBlockCaseStart')
     try:
-        IPData = AthenacWebAPI_.GetIPv4Detail(lan2_.Ip,SiteID_)
-        AthenacWebAPI_.BlockIPv4(IPData[0]['HostId'],True)
+        AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=True,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
         if lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
-        AthenacWebAPI_.BlockIPv4(IPData[0]['HostId'],False)
+        AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=False,siteid=SiteID_)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
     WriteLog('IPBlockCaseFinish')
@@ -279,14 +277,13 @@ def UnauthMACBlockTestCase()->None:
     WriteLog('UnauthMACBlockTestCaseStart')
     try:
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
-        MacData = AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
-        AthenacWebAPI_.AuthMAC(macid=MacData[0]['MacAddressId'],auth=False)
+        AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=False,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
         if not lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Recive ARP Reply {TestIPv4_} by Change IP')
         if not lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {lan2_.globalIp}')
         if not lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {TestIPv6_}')
-        AthenacWebAPI_.AuthMAC(macid=MacData[0]['MacAddressId'],auth=True)
+        AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
@@ -296,12 +293,11 @@ def UnauthIPBlockTestCase()->None:
     WriteLog('UnauthIPBlockTestCaseStart')
     try:
         AthenacWebAPI_.SwitchIPSiteSaveMode(enable=True,siteid=SiteID_)
-        IPData = AthenacWebAPI_.GetIPv4Detail(lan2_.Ip,SiteID_)
-        AthenacWebAPI_.AuthIP(IPData[0]['HostId'],False)
+        AthenacWebAPI_.AuthIP(ip=lan2_.Ip,auth=False,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
         if lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
-        AthenacWebAPI_.AuthIP(IPData[0]['HostId'],True)
+        AthenacWebAPI_.AuthIP(ip=lan2_.Ip,auth=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchIPSiteSaveMode(enable=False,siteid=SiteID_)
     except Exception as e:
         WriteLog('Exception : ' + str(e))
@@ -316,11 +312,10 @@ def Radius8021XTestCase()->None:
         AthenacWebAPI_.ClearAllRadiusClientatSite(siteid=SiteID_)
         AthenacWebAPI_.AddRadiusClient(radiusclientset)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
-        macdata = AthenacWebAPI_.GetMACDetail(MAC=lan1MACUpper_,SiteId=SiteID_)
-        AthenacWebAPI_.AuthMAC(macdata[0]['MacAddressId'],False)
+        AthenacWebAPI_.AuthMAC(mac=lan1MACUpper_,auth=False,siteid=SiteID_)
         radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['RadiusCode']
         if radiuscode != 3 : WriteLog(f'False : Radius code not 3 is {radiuscode}')
-        AthenacWebAPI_.AuthMAC(macdata[0]['MacAddressId'],True)
+        AthenacWebAPI_.AuthMAC(mac=lan1MACUpper_,auth=True,siteid=SiteID_)
         radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['RadiusCode']
         if radiuscode != 2 : WriteLog(f'False : Radius code not 2 is {radiuscode}')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)

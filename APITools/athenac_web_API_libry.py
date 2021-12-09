@@ -141,27 +141,31 @@ class AthenacWebAPILibry:
                 ,'SiteId':i['IpInfo']['SiteId']})
         return result
     
-    def AuthMAC(self,macid:int,auth:bool)->None:
-        if auth: Path ='/api/Hosts/AuthorizeMac/'+str(macid)
-        else: Path ='/api/Hosts/UnauthorizeMac/'+str(macid)
+    def AuthMAC(self,mac:str,auth:bool,siteid:int)->None:
+        macdata = self.GetMACDetail(mac,siteid)[0]
+        if auth: Path =f'/api/Hosts/AuthorizeMac/{macdata["MacAddressId"]}'
+        else: Path =f'/api/Hosts/UnauthorizeMac/{macdata["MacAddressId"]}'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def AuthIP(self,hostid:int,Auth:bool)->None:
-        if Auth:Path = '/api/Hosts/AuthorizeIP/Host/'+str(hostid)
-        else: Path = '/api/Hosts/UnAuthorizeIP/'+str(hostid)
+    def AuthIP(self,ip:str,auth:bool,siteid:int)->None:
+        ipdata = self.GetIPv4Detail(ip,siteid)[0]
+        if auth:Path = f'/api/Hosts/AuthorizeIP/Host/{ipdata["HostId"]}'
+        else: Path = f'/api/Hosts/UnAuthorizeIP/{ipdata["HostId"]}'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
     
-    def BlockMAC(self,macid:int,block:bool)->None:
-        if block: Path = '/api/Hosts/BlockMac/'+str(macid)
-        else: Path = '/api/Hosts/UnblockMac/'+str(macid)
+    def BlockMAC(self,mac:str,block:bool,siteid:int)->None:
+        macdata = self.GetMACDetail(mac,siteid)[0]
+        if block: Path = f'/api/Hosts/BlockMac/{macdata["MacAddressId"]}'
+        else: Path = f'/api/Hosts/UnblockMac/{macdata["MacAddressId"]}'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def BlockIPv4(self,hostid:int,block:bool)->None:
-        if block: Path ='/api/Hosts/BlockIp/V4/'+str(hostid)
-        else: Path = '/api/Hosts/UnBlockIp/V4/'+str(hostid)
+    def BlockIPv4(self,ip:str,block:bool,siteid:int)->None:
+        ipdata = self.GetIPv4Detail(ip,siteid)[0]
+        if block: Path =f'/api/Hosts/BlockIp/V4/{ipdata["HostId"]}'
+        else: Path = f'/api/Hosts/UnBlockIp/V4/{ipdata["HostId"]}'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
@@ -259,6 +263,11 @@ class AthenacWebAPILibry:
     
     def SwitchIPSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+    
+    def SwitchSiteMonitMode(self,enable:bool,siteid:int)->None:
+        Path = f'/api/Sites/{siteid}/ToggleMonitorMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
     
