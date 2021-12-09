@@ -78,22 +78,22 @@ class PacketAction:
          fakeMACNum+=1
       return logStr
 
-   def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool | None:
+   def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
       ARPRequest = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
          /ARP(op=1,hwsrc=self.mac, hwdst="00:00:00:00:00:00",psrc=srcIP, pdst=dstIP)
       result ,nums = srp(ARPRequest, retry=2,timeout=5,iface=self.nicname,multi=True)
-      if not result : return
+      if not result : return False
       for s, r in result:
-         if r[ARP].hwsrc == ProbeMAC:
+         if r[ARP].hwsrc == ProbeMAC and r[ARP].psrc == dstIP:
             return True
       return False
 
-   def NDPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool | None:
+   def NDPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
       NDPSolic = Ether(src =self.mac,dst='33:33:ff:00:00:01')\
          /IPv6(src=srcIP,dst='ff02::1')\
             /ICMPv6ND_NS(tgt=dstIP)
       result ,nums = srp(NDPSolic,retry=2,timeout=5,iface=self.nicname,multi=True)
-      if not result: return
+      if not result: return False
       for s, r in result:
          if r[ICMPv6NDOptDstLLAddr].lladdr == ProbeMAC:
             return True

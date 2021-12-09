@@ -352,8 +352,35 @@ def Radius8021XTestCase()->None:
     WriteLog('Radius8021XTestCaseFinish')
 
 def ProtectIPTestCase()->None:
-    # AthenacWebAPILibry.CreateProtectIP()
-    pass
+    WriteLog('ProtectIPTestCaseStart')
+    try:
+        AthenacWebAPI_.DelIP(ip=TestIPv4_,siteid=SiteID_)
+        AthenacWebAPI_.CreateProtectIP(ip=TestIPv4_,mac=lan1MACUpper_,siteid=SiteID_)
+        if lan1_.ARPBlockCheck(srcIP='0.0.0.0',dstIP=TestIPv4_,ProbeMAC=ProbeMAC_):
+            WriteLog(f'False : Recive ARP {TestIPv4_} by lan1 MAC use 0.0.0.0 check IP used {TestIPv4_}')
+        if not lan2_.ARPBlockCheck(srcIP='0.0.0.0',dstIP=TestIPv4_,ProbeMAC=ProbeMAC_) :
+            WriteLog(f'False : Not Recive ARP {TestIPv4_} by lan2 MAC use 0.0.0.0 check IP used {TestIPv4_}')
+        if not lan2_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_):
+            WriteLog(f'False : Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
+        AthenacWebAPI_.DelIP(ip=TestIPv4_,siteid=SiteID_)
+    except Exception as e:
+        WriteLog('Exception : ' + str(e))
+    WriteLog('ProtectIPTestCaseFinish')
+
+def BindingIPTestCase()->None:
+    WriteLog('BindingIPTestCaseStart')
+    try:
+        AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=SiteID_)
+        AthenacWebAPI_.CreateBindingIP(ip=lan2_.Ip,siteid=SiteID_)
+        lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
+        if not lan2_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_):
+            WriteLog(f'False : Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
+        AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=SiteID_)
+        if lan1_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan1_.gatewayIp,ProbeMAC=ProbeMAC_):
+            WriteLog(f'False : Recive ARP {TestIPv4_} by lan1 MAC use {TestIPv4_}')
+    except Exception as e:
+        WriteLog('Exception : ' + str(e))
+    WriteLog('BindingIPTestCaseFinish')
 
 
 with open('settingconfig.json') as f:
@@ -378,6 +405,8 @@ time.sleep(5)
 
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan2
+ProtectIPTestCase() # use lan1 and lan2
+BindingIPTestCase()# use lan1 and lan2
 UnauthIPBlockTestCase() # use lan2
 UnauthMACBlockTestCase() # use lan2
 IPconflictTestCase() # use lan1 and lan2

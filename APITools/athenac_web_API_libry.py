@@ -3,7 +3,6 @@ import json
 from urllib import parse
 import time
 import threading
-
 from requests.api import head
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient
 from NetPacketTools.packet_action import PacketAction
@@ -37,12 +36,12 @@ class AthenacWebAPILibry:
         with open('Log.json','w') as f:
             f.write(json.dumps(r,indent=4,ensure_ascii=False))    
 
-    def GetCustomerFieldInfo(self,Type:int)->json | str:
-        if Type > 3 : return 'Unknow Type'
-        Path='/api/CustomFieldInfo?customFieldType='+str(Type)
-        Header = {'Authorization':self.Token}
-        r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
-        return json.loads(r.text)
+    # def GetCustomerFieldInfo(self,Type:int)->json | str:
+    #     if Type > 3 : return 'Unknow Type'
+    #     Path='/api/CustomFieldInfo?customFieldType='+str(Type)
+    #     Header = {'Authorization':self.Token}
+    #     r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
+    #     return json.loads(r.text)
 
     def GetUnknowDHCPList(self)->list[dict]:
         Data={'take':0}
@@ -107,7 +106,10 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         hostid = self.GetIPv4Detail(ip,siteid)[0]['HostId']
         Data = {'HostId': hostid, 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        try:
+            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        except:
+            pass
     
     def GetProtectIPDetail(self,ip:str,siteid:int)->list[dict]:
         ipAddressId = self.GetIPv4Detail(ip,siteid)[0]['IpAddressId']
@@ -127,10 +129,16 @@ class AthenacWebAPILibry:
             Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
             requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
+    def CreateBindingIP(self,ip:str,siteid:int)->None:
+        hostId = self.GetIPv4Detail(IP=ip,siteid=siteid)[0]['HostId']
+        Path = f'/api/Hosts/AddMacBindingIp/{hostId}'
+        Header = {'Authorization':self.Token}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
 
     def DelIP(self,ip:str,siteid:int)->None:
-        hostIds = self.GetIPv4Detail(ip,siteid)[0]['HostId']
-        Path = f'/api/Hosts/Delete/Ip/{hostIds}'
+        hostId = self.GetIPv4Detail(ip,siteid)[0]['HostId']
+        Path = f'/api/Hosts/Delete/Ip/{hostId}'
         Header = {'Authorization':self.Token}
         requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
@@ -308,12 +316,18 @@ class AthenacWebAPILibry:
     def SwitchMACSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+        try:
+            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+        except:
+            pass
     
     def SwitchIPSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+        try:
+            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+        except:
+            pass
     
     def SwitchSiteMonitMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMonitorMode'
