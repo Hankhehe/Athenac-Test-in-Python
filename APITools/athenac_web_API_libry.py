@@ -37,13 +37,13 @@ class AthenacWebAPILibry:
         with open('Log.json','w') as f:
             f.write(json.dumps(r,indent=4,ensure_ascii=False))    
 
-    def GetCustomerFieldInfo(self,Type:int)->json:
+    def GetCustomerFieldInfo(self,Type:int)->json | str:
         if Type > 3 : return 'Unknow Type'
         Path='/api/CustomFieldInfo?customFieldType='+str(Type)
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
         return json.loads(r.text)
-    
+
     def GetUnknowDHCPList(self)->list[dict]:
         Data={'take':0}
         Path = '/api/UnknownDhcpServer/Query'
@@ -64,6 +64,118 @@ class AthenacWebAPILibry:
         for i in r:
             result.append({'Ip':i['Ip'],'Mac':i['Mac']})
         return result
+
+
+#region IP Related
+    def GetIPv4Detail(self,IP:str,siteid:int)->list[dict]:
+        Path = '/api/Hosts/Ipv4'
+        Data = {'take':0,"filter":{'logic':'and'
+                    ,'filters':[
+                        {'field':'IpInfo.Ip','value':IP,'operator':'eq'}]}}
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        result=[]
+        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        r=json.loads(r.text)['Data']
+        for i in r:
+            if int(i['IpInfo']['SiteId']) == siteid:
+                result.append({'IpAddressId':i['IpInfo']['IpAddressId']
+                ,'HostId':i['HostId']
+                ,'Isonline':i['IsOnline']
+                ,'IsGLBP':i['IsGLBP']
+                ,'IsRegisted':i['IpInfo']['IsRegisted']
+                ,'IsBlockByUnAuth':i['IpInfo']['BlockingStatus']['IsBlockByUnAuth']
+                ,'IsImportantIP':i['IpInfo']['IsImportantIP']
+                ,'SiteId':i['IpInfo']['SiteId']})
+        return result
+
+    def AuthIP(self,ip:str,auth:bool,siteid:int)->None:
+        ipdata = self.GetIPv4Detail(ip,siteid)[0]
+        if auth:Path = f'/api/Hosts/AuthorizeIP/Host/{ipdata["HostId"]}'
+        else: Path = f'/api/Hosts/UnAuthorizeIP/{ipdata["HostId"]}'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+    def BlockIPv4(self,ip:str,block:bool,siteid:int)->None:
+        ipdata = self.GetIPv4Detail(ip,siteid)[0]
+        if block: Path =f'/api/Hosts/BlockIp/V4/{ipdata["HostId"]}'
+        else: Path = f'/api/Hosts/UnBlockIp/V4/{ipdata["HostId"]}'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+    def CreateProtectIP(self,ip:str,mac:str,siteid:int)->None:
+        Path = '/api/Hosts/ProtectIpWithMac'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        hostid = self.GetIPv4Detail(ip,siteid)[0]['HostId']
+        Data = {'HostId': hostid, 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+    
+    def GetProtectIPDetail(self,ip:str,siteid:int)->list[dict]:
+        ipAddressId = self.GetIPv4Detail(ip,siteid)[0]['IpAddressId']
+        Path = f'/api/Hosts/IpProtection/Table/{ipAddressId}'
+        Header = {'Authorization':self.Token}
+        result = []
+        r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        r = json.loads(r.text)
+        for i in r :
+            result.append({'Id':i['Id'],'IP':i['IP'],'MAC':i['MAC']})
+        return result
+
+    def DelProtectIP(self,ip:str,siteid:int)->None:
+        ipProtectionIds =self.GetProtectIPDetail(ip,siteid)
+        Header = {'Authorization':self.Token}
+        for ipProtectionId in ipProtectionIds:
+            Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
+            requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+
+    def DelIP(self,ip:str,siteid:int)->None:
+        hostIds = self.GetIPv4Detail(ip,siteid)[0]['HostId']
+        Path = f'/api/Hosts/Delete/Ip/{hostIds}'
+        Header = {'Authorization':self.Token}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+
+#endregion
+
+#region MAC related
+    def GetMACDetail(self,MAC:str,SiteId:int)->list[dict]:
+        Path = '/api/Hosts/Mac'
+        Data = {'take':0,"filter":{'logic':'and'
+                    ,'filters':[
+                        {'field':'Mac','value':MAC,'operator':'eq'}
+                            ,{'field':'SiteId','value':SiteId,'operator':'eq'}]}}
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        result=[]
+        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        r=json.loads(r.text)['Data']
+        for i in r:
+            result.append({'MacAddressId':i['MacAddressId']
+            ,'HostName':i['HostName']
+            ,'HostWorkgroup':i['HostWorkgroup']
+            ,'IsRegisteded':i['IsRegisteded']
+            ,'RegisterType':i['RegisterType']
+            ,'IsIpBlockByUnAuth':i['IsIpBlockByUnAuth']
+            ,'IsPrivileged':i['IsPrivileged']
+            ,'IsOnline':i['IsOnline']
+            ,'OSType':i['OSType']
+            ,'SiteId':i['SiteId']})
+        return result
+
+    def AuthMAC(self,mac:str,auth:bool,siteid:int)->None:
+        macdata = self.GetMACDetail(mac,siteid)[0]
+        if auth: Path =f'/api/Hosts/AuthorizeMac/{macdata["MacAddressId"]}'
+        else: Path =f'/api/Hosts/UnauthorizeMac/{macdata["MacAddressId"]}'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+    
+    def BlockMAC(self,mac:str,block:bool,siteid:int)->None:
+        macdata = self.GetMACDetail(mac,siteid)[0]
+        if block: Path = f'/api/Hosts/BlockMac/{macdata["MacAddressId"]}'
+        else: Path = f'/api/Hosts/UnblockMac/{macdata["MacAddressId"]}'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+#endregion 
+
+#region abnormal network related
 
     def GetMulicastDeviceList(self)->list[dict]:
         Path='/api/BroadcastOverload/IPv6'
@@ -96,78 +208,10 @@ class AthenacWebAPILibry:
         for i in r:
             result.append({'Ip':i['Ip'],'Macs':i['Macs']})
         return result
-    
-    def GetMACDetail(self,MAC:str,SiteId:int)->list[dict]:
-        Path = '/api/Hosts/Mac'
-        Data = {'take':0,"filter":{'logic':'and'
-                    ,'filters':[
-                        {'field':'Mac','value':MAC,'operator':'eq'}
-                            ,{'field':'SiteId','value':SiteId,'operator':'eq'}]}}
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        result=[]
-        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r=json.loads(r.text)['Data']
-        for i in r:
-            result.append({'MacAddressId':i['MacAddressId']
-            ,'HostName':i['HostName']
-            ,'HostWorkgroup':i['HostWorkgroup']
-            ,'IsRegisteded':i['IsRegisteded']
-            ,'RegisterType':i['RegisterType']
-            ,'IsIpBlockByUnAuth':i['IsIpBlockByUnAuth']
-            ,'IsPrivileged':i['IsPrivileged']
-            ,'IsOnline':i['IsOnline']
-            ,'OSType':i['OSType']
-            ,'SiteId':i['SiteId']})
-        return result
-    
-    def GetIPv4Detail(self,IP:str,siteid:int)->list[dict]:
-        Path = '/api/Hosts/Ipv4'
-        Data = {'take':0,"filter":{'logic':'and'
-                    ,'filters':[
-                        {'field':'IpInfo.Ip','value':IP,'operator':'eq'}]}}
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        result=[]
-        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r=json.loads(r.text)['Data']
-        for i in r:
-            if int(i['IpInfo']['SiteId']) == siteid:
-                result.append({'IpAddressId':i['IpInfo']['IpAddressId']
-                ,'HostId':i['HostId']
-                ,'Isonline':i['IsOnline']
-                ,'IsGLBP':i['IsGLBP']
-                ,'IsRegisted':i['IpInfo']['IsRegisted']
-                ,'IsBlockByUnAuth':i['IpInfo']['BlockingStatus']['IsBlockByUnAuth']
-                ,'IsImportantIP':i['IpInfo']['IsImportantIP']
-                ,'SiteId':i['IpInfo']['SiteId']})
-        return result
-    
-    def AuthMAC(self,mac:str,auth:bool,siteid:int)->None:
-        macdata = self.GetMACDetail(mac,siteid)[0]
-        if auth: Path =f'/api/Hosts/AuthorizeMac/{macdata["MacAddressId"]}'
-        else: Path =f'/api/Hosts/UnauthorizeMac/{macdata["MacAddressId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
 
-    def AuthIP(self,ip:str,auth:bool,siteid:int)->None:
-        ipdata = self.GetIPv4Detail(ip,siteid)[0]
-        if auth:Path = f'/api/Hosts/AuthorizeIP/Host/{ipdata["HostId"]}'
-        else: Path = f'/api/Hosts/UnAuthorizeIP/{ipdata["HostId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+#endregion
     
-    def BlockMAC(self,mac:str,block:bool,siteid:int)->None:
-        macdata = self.GetMACDetail(mac,siteid)[0]
-        if block: Path = f'/api/Hosts/BlockMac/{macdata["MacAddressId"]}'
-        else: Path = f'/api/Hosts/UnblockMac/{macdata["MacAddressId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
-
-    def BlockIPv4(self,ip:str,block:bool,siteid:int)->None:
-        ipdata = self.GetIPv4Detail(ip,siteid)[0]
-        if block: Path =f'/api/Hosts/BlockIp/V4/{ipdata["HostId"]}'
-        else: Path = f'/api/Hosts/UnBlockIp/V4/{ipdata["HostId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+#region 802.1X related
 
     def GetRadiusClientList(self,siteid:int)->list[dict]:
         Path = f'/api/Site/{str(siteid)}/RadiusClients'
@@ -184,11 +228,11 @@ class AthenacWebAPILibry:
             ,'SharedSecret':i['SharedSecret']})
         return result
     
-    def GetRadiusSetting(self,siteid:int)->dict:
+    def GetRadiusSetting(self,siteid:int)->json:
         Path = f'/api/Site/{str(siteid)}/Radius'
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
-        r:RadiusSetting = json.loads(r.text)
+        r = json.loads(r.text)
         return r
     
     def UpdateRadiusSetting(self,Data:RadiusSetting)->None:
@@ -196,7 +240,7 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
     
-    def AddVLANMapping(self,name:str,Type:int,vlanid:int,siteid:int)->None:
+    def AddVLANMapping(self,name:str,Type:int,vlanid:int | None,siteid:int)->None:
         Path = '/api/Site/RadiusVLanMapping'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {"AssignVlan": vlanid, "MappingValue": name, "MappingValueType": Type, "SiteId": siteid}
@@ -219,11 +263,12 @@ class AthenacWebAPILibry:
             Header = {'Authorization':self.Token}
             requests.delete(self.ServerIP+Path,headers=Header,verify=False)
     
-    def GetVLANMapping(self,name:str,Type:int,siteid:int)->dict:
+    def GetVLANMapping(self,name:str,Type:int,siteid:int)->dict | None:
         r = self.GetVLANMappingList(siteid)
         for i in r:
             if i['MappingValue'] == name and i['MappingValueType'] == Type: #Type 1 = MAC , 2 = Account
                 return i
+        return None
     
     def GetVLANMappingList(self,siteid:int)->list[dict]:
         Path = f'/api/Site/{str(siteid)}/VLanMapping'
@@ -256,6 +301,10 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token}
         requests.delete(self.ServerIP+Path,headers=Header,verify=False)
 
+#endregion
+
+#region Policy setting related
+
     def SwitchMACSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
@@ -270,34 +319,8 @@ class AthenacWebAPILibry:
         Path = f'/api/Sites/{siteid}/ToggleMonitorMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
-    
-    def CreateProtectIP(self,ip:str,mac:str,siteid:int)->None:
-        Path = '/api/Hosts/ProtectIpWithMac'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        hostid = self.GetIPv4Detail(ip,siteid)[0]['HostId']
-        Data = {'HostId': hostid, 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-    
-    def GetProtectIPDetail(self,ip:str,siteid:int)->list[dict]:
-        ipAddressId = self.GetIPv4Detail(ip,siteid)[0]['IpAddressId']
-        Path = f'/api/Hosts/IpProtection/Table/{ipAddressId}'
-        Header = {'Authorization':self.Token}
-        result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        for i in r :
-            result.append({'Id':i['Id'],'IP':i['IP'],'MAC':i['MAC']})
-        return result
 
-    def DelProtectIP(self,ip:str,siteid:int)->None:
-        ipProtectionIds =self.GetProtectIPDetail(ip,siteid)
-        Header = {'Authorization':self.Token}
-        for ipProtectionId in ipProtectionIds:
-            Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
-            requests.post(self.ServerIP+Path,headers=Header,verify=False)
+#endregion
 
-    def DelIP(self,ip:str,siteid:int)->None:
-        hostIds = self.GetIPv4Detail(ip,siteid)[0]['HostId']
-        Path = f'/api/Hosts/Delete/Ip/{hostIds}'
-        Header = {'Authorization':self.Token}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+    
+

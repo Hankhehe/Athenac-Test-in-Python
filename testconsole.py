@@ -22,7 +22,7 @@ import hashlib
 # Action = PacketAction('Ethernet1')
 WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
 time.sleep(5)
-WebAPI.DelIP('192.168.21.87',1)
+WebAPI.SwitchSiteMonitMode(enable=False,siteid=1)
 # WebAPI.DelProtectIP('192.168.21.231',1)
 pass
 # CoATest= PacketActionTest()

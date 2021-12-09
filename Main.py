@@ -192,7 +192,9 @@ def RadiusCoATestCasebyQuar()->None:
         listens = PacketListenFromFilter(lan1_.nicname)
         CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',60*30])
         CoAPacketCheck.start() #Packet listen start
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId'] #Test external default VLAN
+        lan1replyvlanid = lan1_.GetRadiusReply(serverip= serverIP_,nasip=lan1_.Ip) #Test external default VLAN
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.ExternalDefaultVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan} is VLAN ID {lan1replyvlanid} from External Default VLAN')
         lan1_.SendDHCPv4Offer() #Known DHCPv4 test by external MAC
@@ -200,7 +202,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by DHCPv4')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv4')
         lan1_.SendDHCPv6Advertise() #Known DHCPv6 test by external MAC
@@ -208,7 +212,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by DHCPv6')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv6')
         lan1_.SendARPReply(lan1_.Ip,1000) #Broadcast test by external MAC
@@ -216,7 +222,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by Broadcast')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Broadcast')
         lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by external MAC
@@ -224,11 +232,15 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from External Quarantine VLAN by Muticast')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.ExternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
         AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,SiteID_)
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId'] #Test internal default VLAN
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip) #Test internal default VLAN
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.InternalDefaultVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
         lan1_.SendDHCPv4Offer() #Known DHCPv4 test by internal MAC
@@ -236,7 +248,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by DHCPv4')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by DHCPv4')
         lan1_.SendDHCPv6Advertise() #Known DHCPv6 test by internal MAC
@@ -244,7 +258,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by DHCPv6')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by DHCPv6')
         lan1_.SendARPReply(lan1_.Ip,1000) #Broadcast test by internal MAC
@@ -252,7 +268,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by Broadcast')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
             WriteLog(f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by Broadcast')
         lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by internal MAC
@@ -260,7 +278,9 @@ def RadiusCoATestCasebyQuar()->None:
         if not listens.radiuspackets:
             WriteLog('False : not Recive CoA Packet from internal Quarantine VLAN by Muticast')
         else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['VLANId']
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
         if lan1replyvlanid != str(dynamicset.InternalQuarantineVLan):
             WriteLog(f'False :  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
         AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
@@ -311,14 +331,20 @@ def Radius8021XTestCase()->None:
         AthenacWebAPI_.UpdateRadiusSetting(radiusset)
         AthenacWebAPI_.ClearAllRadiusClientatSite(siteid=SiteID_)
         AthenacWebAPI_.AddRadiusClient(radiusclientset)
+        AthenacWebAPI_.SwitchSiteMonitMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.AuthMAC(mac=lan1MACUpper_,auth=False,siteid=SiteID_)
-        radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['RadiusCode']
+        radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if radiuscode:
+            radiuscode =radiuscode['RadiusCode']
         if radiuscode != 3 : WriteLog(f'False : Radius code not 3 is {radiuscode}')
         AthenacWebAPI_.AuthMAC(mac=lan1MACUpper_,auth=True,siteid=SiteID_)
-        radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)['RadiusCode']
+        radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if radiuscode:
+            radiuscode =radiuscode['RadiusCode']
         if radiuscode != 2 : WriteLog(f'False : Radius code not 2 is {radiuscode}')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
+        AthenacWebAPI_.SwitchSiteMonitMode(enable=False,siteid=SiteID_)
         radiusset.EnableRadius = False
         AthenacWebAPI_.UpdateRadiusSetting(radiusset)
     except Exception as e:
@@ -326,7 +352,7 @@ def Radius8021XTestCase()->None:
     WriteLog('Radius8021XTestCaseFinish')
 
 def ProtectIPTestCase()->None:
-    AthenacWebAPILibry.CreateProtectIP()
+    # AthenacWebAPILibry.CreateProtectIP()
     pass
 
 

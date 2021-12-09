@@ -11,8 +11,8 @@ class PacketAction:
       self.nic = [x for x in get_working_ifaces() if nicname == x.name][0]
       self.Ip= self.nic.ip
       self.mac = self.nic.mac
-      self.linklocalIp = [x for x in self.nic.ips[6] if 'fe80::' in x]
-      self.globalIp = [x for x in self.nic.ips[6] if '2001:' in x]
+      self.linklocalIp = [x for x in self.nic.ips[6] if 'fe80::' in x][0]
+      self.globalIp = [x for x in self.nic.ips[6] if '2001:' in x][0]
       self.gatewayIp = conf.route.route('0.0.0.0')[2] 
       self.gatewatIpv6 = conf.route6.route('::')[2]
       
@@ -78,7 +78,7 @@ class PacketAction:
          fakeMACNum+=1
       return logStr
 
-   def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
+   def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool | None:
       ARPRequest = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
          /ARP(op=1,hwsrc=self.mac, hwdst="00:00:00:00:00:00",psrc=srcIP, pdst=dstIP)
       result ,nums = srp(ARPRequest, retry=2,timeout=5,iface=self.nicname,multi=True)
@@ -88,7 +88,7 @@ class PacketAction:
             return True
       return False
 
-   def NDPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
+   def NDPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool | None:
       NDPSolic = Ether(src =self.mac,dst='33:33:ff:00:00:01')\
          /IPv6(src=srcIP,dst='ff02::1')\
             /ICMPv6ND_NS(tgt=dstIP)
@@ -139,13 +139,13 @@ class PacketAction:
          sendp(NDPAdver,iface=self.nicname)
          time.sleep(WaitSec)
 
-   def GetIPv4MAC(self,dstip:str)->str:
+   def GetIPv4MAC(self,dstip:str)->str | None:
       arprequest = Ether(src=self.mac,dst = 'ff:ff:ff:ff:ff:ff')\
          /ARP(op=1,hwsrc=self.mac, hwdst="00:00:00:00:00:00",psrc=self.Ip, pdst=dstip)
       result ,nums = srp(arprequest, retry=2,timeout=5,iface=self.nicname)
       return result[0][1][ARP].hwsrc if result else None
       
-   def GetRadiusReply(self,serverip:str,nasip)->dict:
+   def GetRadiusReply(self,serverip:str,nasip:str)->dict | None:
       dstmac = self.GetIPv4MAC(serverip)
       if not dstmac: return
       RadiusReq =Ether(src =self.mac,dst=dstmac)\
