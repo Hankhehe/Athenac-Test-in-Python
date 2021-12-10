@@ -84,7 +84,7 @@ class PacketAction:
       result ,nums = srp(ARPRequest, retry=2,timeout=5,iface=self.nicname,multi=True)
       if not result : return False
       for s, r in result:
-         if r[ARP].hwsrc == ProbeMAC and r[ARP].psrc == dstIP:
+         if r[ARP].hwsrc == ProbeMAC and r[ARP].psrc == dstIP and r[ARP].hwdst == self.mac and r[ARP].pdst == srcIP:
             return True
       return False
 

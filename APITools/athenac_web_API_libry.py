@@ -106,10 +106,8 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         hostid = self.GetIPv4Detail(ip,siteid)[0]['HostId']
         Data = {'HostId': hostid, 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
-        try:
-            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        except:
-            pass
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+
     
     def GetProtectIPDetail(self,ip:str,siteid:int)->list[dict]:
         ipAddressId = self.GetIPv4Detail(ip,siteid)[0]['IpAddressId']
@@ -316,18 +314,14 @@ class AthenacWebAPILibry:
     def SwitchMACSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        try:
-            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
-        except:
-            pass
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+
     
     def SwitchIPSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        try:
-            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
-        except:
-            pass
+        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+
     
     def SwitchSiteMonitMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMonitorMode'

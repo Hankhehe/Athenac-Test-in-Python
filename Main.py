@@ -23,8 +23,8 @@ def UnknowDHCPTestCase()->None:
         checkSLAAC = False
         for unknowDHCP in unknowDHCPList:
             if unknowDHCP['Ip'] == lan1_.Ip and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 1: checkDHCPv4 = True; continue
-            if unknowDHCP['Ip'] == lan1_.linklocalIp[0] and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
-            if unknowDHCP['Ip'] == lan1_.globalIp[0] and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
+            if unknowDHCP['Ip'] == lan1_.linklocalIp and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
+            if unknowDHCP['Ip'] == lan1_.globalIp and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
         if not checkDHCPv4: WriteLog('False : UnknowDHCPTestCase DHCPv4')
         if not checkDHCPv6: WriteLog('False : UnknowDHCPTestCase DHCPv6')
         if not checkSLAAC: WriteLog('False : UnknowDHCPTestCase SLAAC')
@@ -54,7 +54,7 @@ def MultcastTestCase()->None:
         time.sleep(120)
         mutidevices = AthenacWebAPI_.GetMulicastDeviceList()
         for mutidevice in mutidevices:
-            if mutidevice['Ip'] == lan1_.globalIp[0] and mutidevice['Mac'] == lan1MACUpper_: check = True; break
+            if mutidevice['Ip'] == lan1_.globalIp and mutidevice['Mac'] == lan1MACUpper_: check = True; break
         if not check:WriteLog(f'False : MultcastTestCase {lan1_.globalIp}')
     except Exception as e:
         WriteLog('Exception : ' + str(e))
@@ -121,8 +121,10 @@ def MACblockTestCase()->None:
         AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=True,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
+        lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         if not lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Recive ARP Reply {TestIPv4_} by Change IP')
         if not lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {lan2_.globalIp}')
+        lan2_.SendNA(IP=TestIPv6_,Count=2,WaitSec=2)
         if not lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {TestIPv6_}')
         AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=False,siteid=SiteID_)
     except Exception as e:
@@ -135,6 +137,7 @@ def IPBlockCase()->None:
         AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=True,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
+        lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         if lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
         AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=False,siteid=SiteID_)
     except Exception as e:
@@ -300,8 +303,10 @@ def UnauthMACBlockTestCase()->None:
         AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=False,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
+        lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         if not lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Recive ARP Reply {TestIPv4_} by Change IP')
         if not lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {lan2_.globalIp}')
+        lan2_.SendNA(IP=TestIPv6_,Count=2,WaitSec=2)
         if not lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_): WriteLog(f'False : Not Receive NDP Adver {TestIPv6_}')
         AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
@@ -316,6 +321,7 @@ def UnauthIPBlockTestCase()->None:
         AthenacWebAPI_.AuthIP(ip=lan2_.Ip,auth=False,siteid=SiteID_)
         time.sleep(10)
         if not lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Not Receive ARP {lan2_.Ip}')
+        lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         if lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_):WriteLog(f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
         AthenacWebAPI_.AuthIP(ip=lan2_.Ip,auth=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchIPSiteSaveMode(enable=False,siteid=SiteID_)
@@ -403,8 +409,8 @@ lan2_ = PacketAction(settingconfig_['lan2'])
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
-IPBlockCase() #use lan1 and lan2
-MACblockTestCase() # use lan2
+# IPBlockCase() #use lan1 and lan2
+# MACblockTestCase() # use lan2
 ProtectIPTestCase() # use lan1 and lan2
 BindingIPTestCase()# use lan1 and lan2
 UnauthIPBlockTestCase() # use lan2
