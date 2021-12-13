@@ -409,8 +409,8 @@ lan2_ = PacketAction(settingconfig_['lan2'])
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
-# IPBlockCase() #use lan1 and lan2
-# MACblockTestCase() # use lan2
+IPBlockCase() #use lan1 and lan2
+MACblockTestCase() # use lan2
 ProtectIPTestCase() # use lan1 and lan2
 BindingIPTestCase()# use lan1 and lan2
 UnauthIPBlockTestCase() # use lan2

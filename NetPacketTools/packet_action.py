@@ -84,7 +84,7 @@ class PacketAction:
       result ,nums = srp(ARPRequest, retry=2,timeout=5,iface=self.nicname,multi=True)
       if not result : return False
       for s, r in result:
-         if r[ARP].hwsrc == ProbeMAC and r[ARP].psrc == dstIP and r[ARP].hwdst == self.mac and r[ARP].pdst == srcIP:
+         if r[ARP].psrc == dstIP and r[ARP].hwsrc == ProbeMAC and r[ARP].hwdst == self.mac and r[ARP].pdst == srcIP:
             return True
       return False
 
@@ -95,7 +95,7 @@ class PacketAction:
       result ,nums = srp(NDPSolic,retry=2,timeout=5,iface=self.nicname,multi=True)
       if not result: return False
       for s, r in result:
-         if r[ICMPv6NDOptDstLLAddr].lladdr == ProbeMAC:
+         if r[ICMPv6ND_NA].tgt == dstIP and r[ICMPv6NDOptDstLLAddr].lladdr == ProbeMAC and r[IPv6].dst == srcIP and r[Ether].dst == self.mac:
             return True
       return False
 
@@ -146,7 +146,7 @@ class PacketAction:
       return result[0][1][ARP].hwsrc if result else None
       
    def GetRadiusReply(self,serverip:str,nasip:str)->dict | None:
-      dstmac = self.GetIPv4MAC(serverip)
+      dstmac = self.GetIPv4MAC(self.gatewayIp)
       if not dstmac: return
       RadiusReq =Ether(src =self.mac,dst=dstmac)\
          /IP(src=self.Ip,dst=serverip)\

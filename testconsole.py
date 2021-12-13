@@ -14,12 +14,10 @@ import hashlib
 
 
 WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
+lan2 = PacketAction('Ethernet2')
 time.sleep(5)
-count = 1
-while True:
-    print(f'enable {count}')
-    WebAPI.SwitchMACSiteSaveMode(enable=True,siteid=1)
-    print(f'unable {count}')
-    WebAPI.SwitchMACSiteSaveMode(enable=False,siteid=1)
-pass
+check =   lan2.NDPBlockCheck(srcIP=lan2.linklocalIp,dstIP=lan2.gatewatIpv6,ProbeMAC='00:aa:ff:ae:2b:a1')
+print(check)
+
+
 # WebAPI.SwitchSiteMonitMode(enable=False,siteid=1)
