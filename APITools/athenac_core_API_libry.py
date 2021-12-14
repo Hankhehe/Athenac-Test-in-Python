@@ -1,3 +1,4 @@
+import enum
 import requests
 import json
 
@@ -7,18 +8,20 @@ class AthenacCoreAPILibry:
         self.PixisProbeId = pixisprobeid
         self.ProbeDaemonId = probedaemonId
 
-    def AuthMACFromUserApplybyDB(self,ip:str,mac:str)->None:
+    def AuthMACFromUserApply(self,ip:str,mac:str,account:str,pwd:str)->None:
+        adname = account
+        # if verifytype != 1 : adname = None
         Path = '/PortworkerReport'
         Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
         authdata = {'ActionCode':2305
         ,'IP':ip
-        ,'UserID':'admin'
-        ,'UserPassword':'36IqJwCHVwl9IS4w4b1mMw=='
+        ,'UserID':account
+        ,'UserPassword':pwd #'36IqJwCHVwl9IS4w4b1mMw=='
         ,'GuestApplyInfoList':[]
         ,'DbVerifyCustomFieldList':None
         ,'UserEnableGuestLogin':False
         ,'CustomAuthDate':None
-        ,'AdName':None
+        ,'AdName':account
         ,'StaffApplyInfoList':[]
         ,'MAC':mac
         ,'customFieldVerifyType':2

@@ -388,6 +388,40 @@ def BindingIPTestCase()->None:
         WriteLog('Exception : ' + str(e))
     WriteLog('BindingIPTestCaseFinish')
 
+def UserApplyTestCase()->None:
+    WriteLog('UserApplyTestCaseStart')
+    ADAccount= 'Hank'
+    DBAccount = 'admin'
+    LDAPaccount ='RAJ'
+    try:
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
+        AthenacWebAPI_.UpdateBlockMessage(enable=True,ADverify=True,DBverify=True,LDAPverify=True,siteid=SiteID_)
+        AthenacWebAPI_.AuthMAC(lan2MACUpper_,auth=False,siteid=SiteID_)
+        AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,ADAccount,'QkIHIDPyeiIALps4IKGH+w==') # verify by AD
+        MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
+        if not MACdata : 
+            WriteLog(f'False : can not queried this {lan2MACUpper_} Detail from verify by AD')
+        elif MACdata['IsRegisteded'] != 1 and MACdata['RegisterUserId'] != ADAccount:
+            WriteLog(f'False : verify fail, MAC is {lan2MACUpper_} from verify by AD')
+        AthenacWebAPI_.AuthMAC(lan2MACUpper_,auth=False,siteid=SiteID_)
+        AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,DBAccount,'36IqJwCHVwl9IS4w4b1mMw==') # verify by DB
+        MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
+        if not MACdata : 
+            WriteLog(f'False : can not queried this {lan2MACUpper_} Detail from verify by DB')
+        elif MACdata['IsRegisteded'] != 1 and MACdata['RegisterUserId'] != DBAccount:
+            WriteLog(f'False : verify fail, MAC is {lan2MACUpper_} from verify by DB')
+        AthenacWebAPI_.AuthMAC(lan2MACUpper_,auth=False,siteid=SiteID_)
+        AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,LDAPaccount,'AgRAu+JjydaLEw3me8kTxA==') # verify by LDAP
+        MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
+        if not MACdata : 
+            WriteLog(f'False : can not queried this {lan2MACUpper_} Detail from verify by LDAP')
+        elif MACdata['IsRegisteded'] != 1 and MACdata['RegisterUserId'] != LDAPaccount:
+            WriteLog(f'False : verify fail, MAC is {lan2MACUpper_} from verify by LDAP')
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)        
+    except Exception as e:
+        WriteLog('Exception : ' + str(e))
+    WriteLog('UserApplyTestCaseFinish')
+
 
 with open('settingconfig.json') as f:
     settingconfig_ = json.loads(f.read())
@@ -409,12 +443,15 @@ lan2_ = PacketAction(settingconfig_['lan2'])
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
+
+
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan2
 ProtectIPTestCase() # use lan1 and lan2
 BindingIPTestCase()# use lan1 and lan2
 UnauthIPBlockTestCase() # use lan2
 UnauthMACBlockTestCase() # use lan2
+UserApplyTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
 OutofVLANTestCase() #use lan1
 UnknowDHCPTestCase() # use lan1
