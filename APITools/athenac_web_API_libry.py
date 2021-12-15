@@ -3,7 +3,7 @@ import json
 from urllib import parse
 import time
 import threading
-from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient
+from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient,BlockMessageSetting
 
 class AthenacWebAPILibry:
     def __init__(self,ServerIP:str,Account:str,Pwd:str) -> None:
@@ -34,8 +34,8 @@ class AthenacWebAPILibry:
         with open('Log.json','w') as f:
             f.write(json.dumps(r,indent=4,ensure_ascii=False))    
 
-    def GetCustomerFieldInfo(self,Type:int)->json | str:
-        if Type > 3 : return 'Unknow Type'
+    def GetCustomerFieldInfo(self,Type:int)->dict | None:
+        if Type > 3 : return 
         Path='/api/CustomFieldInfo?customFieldType='+str(Type)
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
@@ -238,7 +238,7 @@ class AthenacWebAPILibry:
             ,'SharedSecret':i['SharedSecret']})
         return result
     
-    def GetRadiusSetting(self,siteid:int)->json:
+    def GetRadiusSetting(self,siteid:int)->dict:
         Path = f'/api/Site/{str(siteid)}/Radius'
         Header = {'Authorization':self.Token}
         r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
@@ -332,27 +332,11 @@ class AthenacWebAPILibry:
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
     
-    def UpdateBlockMessage(self,enable:bool,ADverify:bool,DBverify:bool,LDAPverify:bool,siteid:int)->None:
-        if not enable: ADverify,DBverify,LDAPverify = False,False,False
+    def UpdateBlockMessage(self,config:BlockMessageSetting,siteid:int)->None:
+        # if not config.EnableVerifyModule: config.VerifyModule. ADverify,DBverify,LDAPverify = False,False,False
         Path = f'/api/Site/{siteid}/BlockMessage'
         Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        Data = {'EnableBlockNotify':enable
-        ,'BlockNotify':{'Title':'Test Title','Content':'Test Contect'}
-        ,'EnableVerifyModule':enable
-        ,'VerifyModule':{'ADVerify':{'HasModule':ADverify,'Enable':ADverify}
-        ,'DBVerify':{'HasModule':DBverify,'Enable':DBverify}
-        ,'LDAPVerify':{'HasModule':LDAPverify,'Enable':LDAPverify}
-        ,'EnableTwoFactorAuthentication':False
-        ,'EnablePeriodAuth':False
-        ,'PeriodAuthDays':0
-        ,'EnableStaffLogin':True
-        ,'EnableGuestLogin':False
-        ,'GuestAuthTempHours':0
-        ,'EnableCustomAuthDate':False
-        ,'Title':'Account'
-        ,'Content':'Test'
-        }}
-        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(config.__dict__),verify=False)
 
 #endregion
 

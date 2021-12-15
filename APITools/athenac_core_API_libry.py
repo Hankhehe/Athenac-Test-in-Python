@@ -16,7 +16,7 @@ class AthenacCoreAPILibry:
         authdata = {'ActionCode':2305
         ,'IP':ip
         ,'UserID':account
-        ,'UserPassword':pwd #'36IqJwCHVwl9IS4w4b1mMw=='
+        ,'UserPassword':pwd
         ,'GuestApplyInfoList':[]
         ,'DbVerifyCustomFieldList':None
         ,'UserEnableGuestLogin':False

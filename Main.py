@@ -4,7 +4,7 @@ from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
-from APITools.DataModels.datamodel_apidata import RadiusClient, RadiusSetting
+from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting
 
 def WriteLog(Txt:str)->None:
     with codecs.open('TestLog.txt','a','utf-8') as f:
@@ -393,9 +393,10 @@ def UserApplyTestCase()->None:
     ADAccount= 'Hank'
     DBAccount = 'admin'
     LDAPaccount ='RAJ'
+    blockmessagesetting = BlockMessageSetting(EnableBlockNotify=True,EnableVerifyModule=True,ADverify=True,DBverify=True,LDAPverify=True)
     try:
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
-        AthenacWebAPI_.UpdateBlockMessage(enable=True,ADverify=True,DBverify=True,LDAPverify=True,siteid=SiteID_)
+        AthenacWebAPI_.UpdateBlockMessage(config=blockmessagesetting,siteid=SiteID_)
         AthenacWebAPI_.AuthMAC(lan2MACUpper_,auth=False,siteid=SiteID_)
         AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,ADAccount,'QkIHIDPyeiIALps4IKGH+w==') # verify by AD
         MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
@@ -444,14 +445,14 @@ lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
 
-
+UserApplyTestCase() # use lan1 and lan2
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan2
 ProtectIPTestCase() # use lan1 and lan2
 BindingIPTestCase()# use lan1 and lan2
 UnauthIPBlockTestCase() # use lan2
 UnauthMACBlockTestCase() # use lan2
-UserApplyTestCase() # use lan1 and lan2
+
 IPconflictTestCase() # use lan1 and lan2
 OutofVLANTestCase() #use lan1
 UnknowDHCPTestCase() # use lan1

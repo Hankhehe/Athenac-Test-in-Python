@@ -27,3 +27,27 @@ class RadiusClient:
         self.SharedSecret= SharedSecret
         self.SiteId= SiteId
         self.SubnetMask= SubnetMask
+
+class BlockMessageSetting:
+    def __init__(self,EnableBlockNotify:bool,EnableVerifyModule:bool,ADverify:bool,DBverify:bool,LDAPverify:bool
+    ,EnableTwoFactorAuthentication:bool = False,EnablePeriodAuth:bool = False,PeriodAuthDays:int = 1 ,EnableStaffLogin:bool=True
+    ,EnableGuestLogin:bool=True,GuestAuthTempHours:int=2,EnableCustomAuthDate:bool=False) -> None:
+        self.EnableBlockNotify = EnableBlockNotify
+        self.BlockNotify ={'Title':'Automation test tittle','Content':'Automation test contect'}
+        self.EnableVerifyModule = EnableVerifyModule
+        self.VerifyModule = {
+                'ADVerify':{'HasModule':ADverify,'Enable':ADverify}
+                ,'DBVerify':{'HasModule':DBverify,'Enable':DBverify}
+                ,'LDAPVerify':{'HasModule':LDAPverify,'Enable':LDAPverify}
+                ,'EnableTwoFactorAuthentication':EnableTwoFactorAuthentication
+                ,'EnablePeriodAuth':EnablePeriodAuth
+                ,'PeriodAuthDays':PeriodAuthDays
+                ,'EnableStaffLogin':EnableStaffLogin
+                ,'EnableGuestLogin':EnableGuestLogin
+                ,'GuestAuthTempHours':GuestAuthTempHours
+                ,'EnableCustomAuthDate':EnableCustomAuthDate
+                ,'Title':'Automation test account'
+                ,'Content':'Automation Test text'
+                }
+        
+
