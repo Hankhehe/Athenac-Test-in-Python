@@ -445,14 +445,14 @@ lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
 
-UserApplyTestCase() # use lan1 and lan2
+
 IPBlockCase() #use lan1 and lan2
 MACblockTestCase() # use lan2
 ProtectIPTestCase() # use lan1 and lan2
 BindingIPTestCase()# use lan1 and lan2
 UnauthIPBlockTestCase() # use lan2
 UnauthMACBlockTestCase() # use lan2
-
+UserApplyTestCase() # use lan1 and lan2
 IPconflictTestCase() # use lan1 and lan2
 OutofVLANTestCase() #use lan1
 UnknowDHCPTestCase() # use lan1
