@@ -16,16 +16,16 @@ class AthenacWebAPILibry:
         t.start()
 
     def GetLoginToken(self)-> None:
-        while True:
-            Path = '/api/connect/token'
-            Header = {'Content-Type': 'application/x-www-form-urlencoded' }
-            FormData = {"grant_type": 'password','scope':'offline_access', 'username': self.Account, 'password': self.Pwd} 
-            Data = parse.urlencode(FormData)
-            r = requests.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
-            r = json.loads(r.text)
-            self.Token = 'Bearer '+ r['access_token']
-            self.FreshToken ='Bearer ' + r['refresh_token']
-            time.sleep(1700)
+        # while True:
+        Path = '/api/connect/token'
+        Header = {'Content-Type': 'application/x-www-form-urlencoded' }
+        FormData = {"grant_type": 'password','scope':'offline_access', 'username': self.Account, 'password': self.Pwd} 
+        Data = parse.urlencode(FormData)
+        r = requests.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
+        r = json.loads(r.text)
+        self.Token = 'Bearer '+ r['access_token']
+        self.FreshToken ='Bearer ' + r['refresh_token']
+        # time.sleep(1700)
 
     def DumpJson(self,Path:str)->None:
         Header = {'Authorization':self.Token}
