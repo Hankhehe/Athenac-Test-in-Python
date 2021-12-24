@@ -1,4 +1,4 @@
-import threading,time,datetime,codecs,json,pytest_check as check
+import threading,time,json,pytest_check as check
 from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
@@ -10,30 +10,30 @@ class TestIPAM:
     def test_IPBlockCase(self)->None:
             AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=True,siteid=SiteID_)
             time.sleep(10)
-            check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f'False : Not Receive ARP {lan2_.Ip}')
+            check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f' Not Receive ARP {lan2_.Ip}')
             lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
-            check.is_false(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_),f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
+            check.is_false(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_),f' Recive ARP Rqply {TestIPv4_} by Change IP')
             AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=False,siteid=SiteID_)
 
     def test_MACblockTestCase(self)->None:
         AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=True,siteid=SiteID_)
         time.sleep(10)
-        check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f'False : Not Receive ARP {lan2_.Ip}')
-        check.is_true(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_),f'False : Not Recive ARP Reply {TestIPv4_} by Change IP')
-        check.is_true(lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_),f'False : Not Receive NDP Adver {lan2_.globalIp}')
+        check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f' Not Receive ARP {lan2_.Ip}')
+        check.is_true(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_),f' Not Recive ARP Reply {TestIPv4_} by Change IP')
+        check.is_true(lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_),f' Not Receive NDP Adver {lan2_.globalIp}')
         lan2_.SendNA(IP=TestIPv6_,Count=2,WaitSec=2)
-        check.is_true(lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_),f'False : Not Receive NDP Adver {TestIPv6_}')
+        check.is_true(lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_),f' Not Receive NDP Adver {TestIPv6_}')
         AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=False,siteid=SiteID_)
 
     def test_ProtectIPTestCase(self)->None:
         AthenacWebAPI_.DelIP(ip=TestIPv4_,siteid=SiteID_)
         AthenacWebAPI_.CreateProtectIP(ip=TestIPv4_,mac=lan1MACUpper_,siteid=SiteID_)
         check.is_false(lan1_.ARPBlockCheck(srcIP='0.0.0.0',dstIP=TestIPv4_,ProbeMAC=ProbeMAC_)
-        ,f'False : Recive ARP {TestIPv4_} by lan1 MAC use 0.0.0.0 check IP used {TestIPv4_}')
+        ,f' Recive ARP {TestIPv4_} by lan1 MAC use 0.0.0.0 check IP used {TestIPv4_}')
         check.is_true(lan2_.ARPBlockCheck(srcIP='0.0.0.0',dstIP=TestIPv4_,ProbeMAC=ProbeMAC_)
-        ,f'False : Not Recive ARP {TestIPv4_} by lan2 MAC use 0.0.0.0 check IP used {TestIPv4_}')
+        ,f' Not Recive ARP {TestIPv4_} by lan2 MAC use 0.0.0.0 check IP used {TestIPv4_}')
         check.is_true(lan2_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_)
-        ,f'False : Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
+        ,f' Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
         AthenacWebAPI_.DelIP(ip=TestIPv4_,siteid=SiteID_)
 
     def test_BindingIPTestCase(self)->None:
@@ -42,25 +42,25 @@ class TestIPAM:
         AthenacWebAPI_.CreateBindingIP(ip=lan2_.Ip,siteid=SiteID_)
         lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         check.is_true(lan2_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_)
-        ,f'False : Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
+        ,f' Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
         AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=SiteID_)
         check.is_false(lan1_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan1_.gatewayIp,ProbeMAC=ProbeMAC_)
-        ,f'False : Recive ARP {TestIPv4_} by lan1 MAC use {TestIPv4_}')
+        ,f' Recive ARP {TestIPv4_} by lan1 MAC use {TestIPv4_}')
 
     def test_UnauthMACBlockTestCase(self)->None:
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=False,siteid=SiteID_)
         time.sleep(10)
         check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_)
-        ,f'False : Not Receive ARP {lan2_.Ip}')
+        ,f' Not Receive ARP {lan2_.Ip}')
         lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         check.is_true(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_)
-        ,f'False : Not Recive ARP Reply {TestIPv4_} by Change IP')
+        ,f' Not Recive ARP Reply {TestIPv4_} by Change IP')
         check.is_true(lan2_.NDPBlockCheck(lan2_.globalIp,lan2_.gatewatIpv6,ProbeMAC_)
-        ,f'False : Not Receive NDP Adver {lan2_.globalIp}')
+        ,f' Not Receive NDP Adver {lan2_.globalIp}')
         lan2_.SendNA(IP=TestIPv6_,Count=2,WaitSec=2)
         check.is_true(lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_)
-        ,f'False : Not Receive NDP Adver {TestIPv6_}')
+        ,f' Not Receive NDP Adver {TestIPv6_}')
         AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
@@ -69,10 +69,10 @@ class TestIPAM:
         AthenacWebAPI_.AuthIP(ip=lan2_.Ip,auth=False,siteid=SiteID_)
         time.sleep(10)
         check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_)
-        ,f'False : Not Receive ARP {lan2_.Ip}')
+        ,f' Not Receive ARP {lan2_.Ip}')
         lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
         check.is_false(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_)
-        ,f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
+        ,f' Recive ARP Rqply {TestIPv4_} by Change IP')
         AthenacWebAPI_.SwitchIPSiteSaveMode(enable=False,siteid=SiteID_)
 
     def test_UserApplyTestCase(self)->None:
@@ -86,26 +86,26 @@ class TestIPAM:
         AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,ADAccount,'QkIHIDPyeiIALps4IKGH+w==') # verify by AD
         MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
         if not MACdata : 
-            check.is_not_none(MACdata,f'False : can not queried this {lan2MACUpper_} Detail from verify by AD')
+            check.is_not_none(MACdata,f' can not queried this {lan2MACUpper_} Detail from verify by AD')
         else: 
             check.is_true(MACdata['IsRegisteded'] == 1 and MACdata['RegisterUserId'] == ADAccount
-            ,f'False : verify fail, MAC is {lan2MACUpper_} from verify by AD')
+            ,f' verify fail, MAC is {lan2MACUpper_} from verify by AD')
         AthenacWebAPI_.AuthMAC(lan2MACUpper_,auth=False,siteid=SiteID_)
         AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,DBAccount,'36IqJwCHVwl9IS4w4b1mMw==') # verify by DB
         MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
         if not MACdata : 
-            check.is_not_none(MACdata,f'False : can not queried this {lan2MACUpper_} Detail from verify by DB')
+            check.is_not_none(MACdata,f' can not queried this {lan2MACUpper_} Detail from verify by DB')
         else: 
             check.is_true(MACdata['IsRegisteded'] == 1 and MACdata['RegisterUserId'] == DBAccount
-            ,f'False : verify fail, MAC is {lan2MACUpper_} from verify by DB')
+            ,f' verify fail, MAC is {lan2MACUpper_} from verify by DB')
         AthenacWebAPI_.AuthMAC(lan2MACUpper_,auth=False,siteid=SiteID_)
         AthenacCoreAPI_.AuthMACFromUserApply(lan2_.Ip,lan2MACUpper_,LDAPaccount,'AgRAu+JjydaLEw3me8kTxA==') # verify by LDAP
         MACdata =  AthenacWebAPI_.GetMACDetail(MAC=lan2MACUpper_,SiteId=SiteID_)
         if not MACdata : 
-            check.is_not_none(MACdata,f'False : can not queried this {lan2MACUpper_} Detail from verify by LDAP')
+            check.is_not_none(MACdata,f' can not queried this {lan2MACUpper_} Detail from verify by LDAP')
         else: 
             check.is_true(MACdata['IsRegisteded'] == 1 and MACdata['RegisterUserId'] == LDAPaccount
-            ,f'False : verify fail, MAC is {lan2MACUpper_} from verify by LDAP')
+            ,f' verify fail, MAC is {lan2MACUpper_} from verify by LDAP')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
 class TestAbnormalDevice:
@@ -123,8 +123,8 @@ class TestAbnormalDevice:
         for IPconflictdevice in IPconflictdevices:
             if IPconflictdevice['Ip'] == TestIPv4_ and lan1MACUpper_ in IPconflictdevice['Macs'] and lan2MACUpper_ in IPconflictdevice['Macs']:checkv4 = True; continue
             if IPconflictdevice['Ip'] == TestIPv6_ and lan1MACUpper_ in IPconflictdevice['Macs'] and lan2MACUpper_ in IPconflictdevice['Macs']:checkv6 = True; continue
-        check.is_true(checkv4,f'False : IPconflictTestCase {TestIPv4_}')
-        check.is_true(checkv6,f'False : IPconflictTestCase {TestIPv6_}')
+        check.is_true(checkv4,f' IPconflictTestCase {TestIPv4_}')
+        check.is_true(checkv6,f' IPconflictTestCase {TestIPv6_}')
             
     def test_OutofVLANTestCase(self)->None:
         checkflag = False
@@ -133,7 +133,7 @@ class TestAbnormalDevice:
         outofVLANDevices = AthenacWebAPI_.GetOutofVLANList()
         for outofVLANDevice in outofVLANDevices:
             if outofVLANDevice['Ip'] == '10.1.1.87' and outofVLANDevice['Mac'] == lan1MACUpper_: checkflag = True; break
-        check.is_true(checkflag,'False : OutofVLANTestCase IP: 10.1.1.87')
+        check.is_true(checkflag,' OutofVLANTestCase IP: 10.1.1.87')
 
     def test_UnknowDHCPTestCase(self)->None:
         lan1_.SendDHCPv4Offer()
@@ -148,9 +148,9 @@ class TestAbnormalDevice:
             if unknowDHCP['Ip'] == lan1_.Ip and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 1: checkDHCPv4 = True; continue
             if unknowDHCP['Ip'] == lan1_.linklocalIp and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 1: checkDHCPv6 = True; continue
             if unknowDHCP['Ip'] == lan1_.globalIp and unknowDHCP['Mac'] == lan1MACUpper_ and unknowDHCP['ServerType'] == 2:checkSLAAC=True; continue
-        check.is_true(checkDHCPv4,'False : UnknowDHCPTestCase DHCPv4')
-        check.is_true(checkDHCPv6,'False : UnknowDHCPTestCase DHCPv6')
-        check.is_true(checkSLAAC,'False : UnknowDHCPTestCase SLAAC')
+        check.is_true(checkDHCPv4,' UnknowDHCPTestCase DHCPv4')
+        check.is_true(checkDHCPv6,' UnknowDHCPTestCase DHCPv6')
+        check.is_true(checkSLAAC,' UnknowDHCPTestCase SLAAC')
 
     def test_BroadcastTesttCase(self)->None:
         checkfalg = False
@@ -159,7 +159,7 @@ class TestAbnormalDevice:
         borDevices = AthenacWebAPI_.GetBrocastDeviceList()
         for borDevice in borDevices:
             if borDevice['Ip'] == lan1_.Ip and borDevice['Mac'] == lan1MACUpper_: checkfalg = True; break
-        check.is_true(checkfalg,f'False : BrocastcastTest {lan1_.Ip}')
+        check.is_true(checkfalg,f' BrocastcastTest {lan1_.Ip}')
  
     def test_MultcastTestCase(self)->None:
         checkflag = False
@@ -168,7 +168,7 @@ class TestAbnormalDevice:
         mutidevices = AthenacWebAPI_.GetMulicastDeviceList()
         for mutidevice in mutidevices:
             if mutidevice['Ip'] == lan1_.globalIp and mutidevice['Mac'] == lan1MACUpper_: checkflag = True; break
-        check.is_true(checkflag,f'False : MultcastTestCase {lan1_.globalIp}')
+        check.is_true(checkflag,f' MultcastTestCase {lan1_.globalIp}')
 
 
 class TestRadius:
@@ -184,12 +184,12 @@ class TestRadius:
         radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if radiuscode:
             radiuscode =radiuscode['RadiusCode']
-        check.is_true(radiuscode == 3,f'False : Radius code not 3 is {radiuscode}')
+        check.is_true(radiuscode == 3,f' Radius code not 3 is {radiuscode}')
         AthenacWebAPI_.AuthMAC(mac=lan1MACUpper_,auth=True,siteid=SiteID_)
         radiuscode = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if radiuscode:
             radiuscode =radiuscode['RadiusCode']
-        check.is_true(radiuscode == 2,f'False : Radius code not 2 is {radiuscode}')
+        check.is_true(radiuscode == 2,f' Radius code not 2 is {radiuscode}')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
         AthenacWebAPI_.SwitchSiteMonitMode(enable=False,siteid=SiteID_)
         radiusset.EnableRadius = False
@@ -204,26 +204,26 @@ class TestRadius:
         AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         radiusresult = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if not radiusresult :
-            check.is_not_none(radiusresult,'False : not Recived Radius Reply Packet from External Default VLAN')
+            check.is_not_none(radiusresult,' not Recived Radius Reply Packet from External Default VLAN')
         else : 
             check.is_true(radiusresult['VLANId'] == str(dynamicset.ExternalDefaultVLan)
-            ,f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {radiusresult["VLANId"]} from External Default VLAN')
+            ,f' Recive not VLAN ID {dynamicset.ExternalDefaultVLan}, is VLAN ID {radiusresult["VLANId"]} from External Default VLAN')
         radiusresult = None
         AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,SiteID_)
         radiusresult = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if not radiusresult :
-            check.is_not_none(radiusresult,'False : not Recived Radius Reply Packet from Internal Default VLAN')
+            check.is_not_none(radiusresult,' not Recived Radius Reply Packet from Internal Default VLAN')
         else:
             check.is_true(radiusresult['VLANId'] == str(dynamicset.InternalDefaultVLan)
-            ,f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {radiusresult["VLANId"]} from Internal Default VLAN')
+            ,f' Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {radiusresult["VLANId"]} from Internal Default VLAN')
         radiusresult = None
         AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,VLANIDMapping_,SiteID_)
         radiusresult = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if not radiusresult :
-            check.is_not_none(radiusresult,'False : not Recived Radius Reply Packet from VLAN Mapping List')
+            check.is_not_none(radiusresult,' not Recived Radius Reply Packet from VLAN Mapping List')
         else:
             check.is_true(radiusresult['VLANId'] == str(VLANIDMapping_)
-            ,f'False : Recive not VLAN ID {VLANIDMapping_} is VLAN ID {radiusresult["VLANId"]} from VLAN Mapping List')
+            ,f' Recive not VLAN ID {VLANIDMapping_} is VLAN ID {radiusresult["VLANId"]} from VLAN Mapping List')
         AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         dynamicset.EnableDynamicVLAN = False
         dynamicset.EnableRadius = False
@@ -246,93 +246,95 @@ class TestRadius:
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.ExternalDefaultVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.ExternalDefaultVLan} is VLAN ID {lan1replyvlanid} from External Default VLAN')
+        ,f' Recive not VLAN ID {dynamicset.ExternalDefaultVLan} is VLAN ID {lan1replyvlanid} from External Default VLAN')
         lan1_.SendDHCPv4Offer() #Known DHCPv4 test by external MAC
         time.sleep(10)
         if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from External Quarantine VLAN by DHCPv4')
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from External Quarantine VLAN by DHCPv4')
         else: listens.radiuspackets.clear()
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv4')
+        ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv4')
         lan1_.SendDHCPv6Advertise() #Known DHCPv6 test by external MAC
         time.sleep(10)
         if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from External Quarantine VLAN by DHCPv6')
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from External Quarantine VLAN by DHCPv6')
         else: listens.radiuspackets.clear()
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv6')
+        ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by DHCPv6')
         lan1_.SendARPReply(lan1_.Ip,1000) #Broadcast test by external MAC
         time.sleep(140)
         if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from External Quarantine VLAN by Broadcast')
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from External Quarantine VLAN by Broadcast')
         else: listens.radiuspackets.clear()
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Broadcast')
-        lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by external MAC
-        time.sleep(140)
-        if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from External Quarantine VLAN by Muticast')
-        else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
-        if lan1replyvlanid:
-            lan1replyvlanid = lan1replyvlanid['VLANId']
-        check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
+        ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Broadcast')
+        # ------it's cancel temply, becouse that function not yet be done in athenac ------
+        # lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by external MAC
+        # time.sleep(140)
+        # if not listens.radiuspackets:
+        #     check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from External Quarantine VLAN by Muticast')
+        # else: listens.radiuspackets.clear()
+        # lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        # if lan1replyvlanid:
+        #     lan1replyvlanid = lan1replyvlanid['VLANId']
+        # check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
+        # ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
         AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,SiteID_)
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip) #Test internal default VLAN
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.InternalDefaultVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
+        ,f' Recive not VLAN ID {dynamicset.InternalDefaultVLan} is VLAN ID {lan1replyvlanid} from Internal Default VLAN')
         lan1_.SendDHCPv4Offer() #Known DHCPv4 test by internal MAC
         time.sleep(10)
         if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from internal Quarantine VLAN by DHCPv4')
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from internal Quarantine VLAN by DHCPv4')
         else: listens.radiuspackets.clear()
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by DHCPv4')
+        ,f' Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by DHCPv4')
         lan1_.SendDHCPv6Advertise() #Known DHCPv6 test by internal MAC
         time.sleep(10)
         if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from internal Quarantine VLAN by DHCPv6')
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from internal Quarantine VLAN by DHCPv6')
         else: listens.radiuspackets.clear()
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by DHCPv6')
+        ,f' Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by DHCPv6')
         lan1_.SendARPReply(lan1_.Ip,1000) #Broadcast test by internal MAC
         time.sleep(140)
         if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from internal Quarantine VLAN by Broadcast')
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from internal Quarantine VLAN by Broadcast')
         else: listens.radiuspackets.clear()
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
         if lan1replyvlanid:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
-        ,f'False : Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by Broadcast')
-        lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by internal MAC
-        time.sleep(140)
-        if not listens.radiuspackets:
-            check.is_not_none(listens.radiuspackets,'False : not Recive CoA Packet from internal Quarantine VLAN by Muticast')
-        else: listens.radiuspackets.clear()
-        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
-        if lan1replyvlanid:
-            lan1replyvlanid = lan1replyvlanid['VLANId']
-        check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
-        ,f'False :  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
+        ,f' Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by Broadcast')
+        # ------it's cancel temply, becouse that function not yet be done in athenac ------
+        # lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by internal MAC
+        # time.sleep(140)
+        # if not listens.radiuspackets:
+        #     check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from internal Quarantine VLAN by Muticast')
+        # else: listens.radiuspackets.clear()
+        # lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        # if lan1replyvlanid:
+        #     lan1replyvlanid = lan1replyvlanid['VLANId']
+        # check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
+        # ,f'  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
         AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         dynamicset.EnableDynamicVLAN = False
         dynamicset.EnableRadius = False
