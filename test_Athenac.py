@@ -240,7 +240,7 @@ class TestRadius:
         AthenacWebAPI_.ClearAllMappingatSite(siteid=SiteID_)
         AthenacWebAPI_.AddRadiusClient(radiusclientset)
         listens = PacketListenFromFilter(lan1_.nicname)
-        CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',60*30])
+        CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',60*15])
         CoAPacketCheck.start() #Packet listen start
         lan1replyvlanid = lan1_.GetRadiusReply(serverip= serverIP_,nasip=lan1_.Ip) #Test external default VLAN
         if lan1replyvlanid:
