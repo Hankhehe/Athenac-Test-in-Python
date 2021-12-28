@@ -277,17 +277,16 @@ class TestRadius:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
         ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Broadcast')
-        # ------it's cancel temply, becouse that function not yet be done in athenac ------
-        # lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by external MAC
-        # time.sleep(140)
-        # if not listens.radiuspackets:
-        #     check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from External Quarantine VLAN by Muticast')
-        # else: listens.radiuspackets.clear()
-        # lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
-        # if lan1replyvlanid:
-        #     lan1replyvlanid = lan1replyvlanid['VLANId']
-        # check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
-        # ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
+        lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by external MAC
+        time.sleep(140)
+        if not listens.radiuspackets:
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from External Quarantine VLAN by Muticast')
+        else: listens.radiuspackets.clear()
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
+        check.is_true(lan1replyvlanid == str(dynamicset.ExternalQuarantineVLan)
+        ,f' Recive not VLAN ID {dynamicset.ExternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from External Quarantine VLAN by Muticast')
         AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,SiteID_)
         lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip) #Test internal default VLAN
         if lan1replyvlanid:
@@ -324,17 +323,16 @@ class TestRadius:
             lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
         ,f' Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from Internal Quarantine VLAN by Broadcast')
-        # ------it's cancel temply, becouse that function not yet be done in athenac ------
-        # lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by internal MAC
-        # time.sleep(140)
-        # if not listens.radiuspackets:
-        #     check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from internal Quarantine VLAN by Muticast')
-        # else: listens.radiuspackets.clear()
-        # lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
-        # if lan1replyvlanid:
-        #     lan1replyvlanid = lan1replyvlanid['VLANId']
-        # check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
-        # ,f'  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
+        lan1_.SendNA(lan1_.globalIp,1000) #Muticast test by internal MAC
+        time.sleep(140)
+        if not listens.radiuspackets:
+            check.is_not_none(listens.radiuspackets,' not Recive CoA Packet from internal Quarantine VLAN by Muticast')
+        else: listens.radiuspackets.clear()
+        lan1replyvlanid = lan1_.GetRadiusReply(serverIP_,lan1_.Ip)
+        if lan1replyvlanid:
+            lan1replyvlanid = lan1replyvlanid['VLANId']
+        check.is_true(lan1replyvlanid == str(dynamicset.InternalQuarantineVLan)
+        ,f'  Recive not VLAN ID {dynamicset.InternalQuarantineVLan} is VLAN ID {lan1replyvlanid} from internal Quarantine VLAN by Muticast')
         AthenacWebAPI_.DelVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,SiteID_)
         dynamicset.EnableDynamicVLAN = False
         dynamicset.EnableRadius = False
