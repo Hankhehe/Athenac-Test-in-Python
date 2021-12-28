@@ -11,5 +11,13 @@ from NetPacketTools.packet_action_test import PacketActionTest
 import threading
 import hashlib
 
+for retriescount in range(3):
+    print(f'aa')
+
+
 WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
+time.sleep(5)
+WebAPI.Token = ''
+WebAPI.AuthMAC(mac='005056AEAA69',auth=False,siteid=2)
+
 print('Stop')

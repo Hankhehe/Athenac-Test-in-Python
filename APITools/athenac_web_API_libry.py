@@ -1,8 +1,6 @@
 import requests
 import json
 from urllib import parse
-import time
-import threading
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient,BlockMessageSetting
 
 class AthenacWebAPILibry:
@@ -12,11 +10,10 @@ class AthenacWebAPILibry:
         self.Pwd = Pwd
         self.Token = ''
         self.FreshToken = ''
-        t = threading.Thread(target=self.GetLoginToken)
-        t.start()
+        self.retriesnum = 3
+        self.GetLoginToken()
 
     def GetLoginToken(self)-> None:
-        # while True:
         Path = '/api/connect/token'
         Header = {'Content-Type': 'application/x-www-form-urlencoded' }
         FormData = {"grant_type": 'password','scope':'offline_access', 'username': self.Account, 'password': self.Pwd} 
@@ -25,41 +22,71 @@ class AthenacWebAPILibry:
         r = json.loads(r.text)
         self.Token = 'Bearer '+ r['access_token']
         self.FreshToken ='Bearer ' + r['refresh_token']
-        # time.sleep(1700)
 
     def DumpJson(self,Path:str)->None:
-        Header = {'Authorization':self.Token}
-        r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        with open('Log.json','w') as f:
-            f.write(json.dumps(r,indent=4,ensure_ascii=False))    
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return
+        if r :
+            r = json.loads(r.text)
+            with open('Log.json','w') as f:
+                f.write(json.dumps(r,indent=4,ensure_ascii=False))    
 
     def GetCustomerFieldInfo(self,Type:int)->dict | None:
         if Type > 3 : return 
         Path='/api/CustomFieldInfo?customFieldType='+str(Type)
-        Header = {'Authorization':self.Token}
-        r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
-        return json.loads(r.text)
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r :
+            return json.loads(r.text)
 
     def GetUnknowDHCPList(self)->list[dict]:
         Data={'take':0}
         Path = '/api/UnknownDhcpServer/Query'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r = json.loads(r.text)['Data']
-        for i in r:
-            result.append({'Ip':i['Ip'],'Mac':i['Mac'],'ServerType':i['ServerType']})
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'Ip':i['Ip'],'Mac':i['Mac'],'ServerType':i['ServerType']})
         return result
     
     def GetBrocastDeviceList(self)->list[dict]:
         Path='/api/BroadcastOverload/IPv4'
-        Header ={'Authorization':self.Token}
         result = []
-        r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        for i in r:
-            result.append({'Ip':i['Ip'],'Mac':i['Mac']})
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header ={'Authorization':self.Token}
+            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)
+            for i in r:
+                result.append({'Ip':i['Ip'],'Mac':i['Mac']})
         return result
 
 
@@ -69,78 +96,122 @@ class AthenacWebAPILibry:
         Data = {'take':0,"filter":{'logic':'and'
                     ,'filters':[
                         {'field':'IpInfo.Ip','value':IP,'operator':'eq'}]}}
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r=json.loads(r.text)['Data']
-        for i in r:
-            if int(i['IpInfo']['SiteId']) == siteid:
-                return {'IpAddressId':i['IpInfo']['IpAddressId']
-                ,'HostId':i['HostId']
-                ,'Isonline':i['IsOnline']
-                ,'IsGLBP':i['IsGLBP']
-                ,'IsRegisted':i['IpInfo']['IsRegisted']
-                ,'IsBlockByUnAuth':i['IpInfo']['BlockingStatus']['IsBlockByUnAuth']
-                ,'IsImportantIP':i['IpInfo']['IsImportantIP']
-                ,'SiteId':i['IpInfo']['SiteId']}
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401 :
+                self.GetLoginToken()
+            else: return
+        if r :
+            r=json.loads(r.text)['Data']
+            for i in r:
+                if int(i['IpInfo']['SiteId']) == siteid:
+                    return {'IpAddressId':i['IpInfo']['IpAddressId']
+                    ,'HostId':i['HostId']
+                    ,'Isonline':i['IsOnline']
+                    ,'IsGLBP':i['IsGLBP']
+                    ,'IsRegisted':i['IpInfo']['IsRegisted']
+                    ,'IsBlockByUnAuth':i['IpInfo']['BlockingStatus']['IsBlockByUnAuth']
+                    ,'IsImportantIP':i['IpInfo']['IsImportantIP']
+                    ,'SiteId':i['IpInfo']['SiteId']}
 
     def AuthIP(self,ip:str,auth:bool,siteid:int)->None:
         ipdata = self.GetIPv4Detail(ip,siteid)
         if not ipdata : return
         if auth:Path = f'/api/Hosts/AuthorizeIP/Host/{ipdata["HostId"]}'
         else: Path = f'/api/Hosts/UnAuthorizeIP/{ipdata["HostId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
     def BlockIPv4(self,ip:str,block:bool,siteid:int)->None:
         ipdata = self.GetIPv4Detail(ip,siteid)
         if not ipdata : return
         if block: Path =f'/api/Hosts/BlockIp/V4/{ipdata["HostId"]}'
         else: Path = f'/api/Hosts/UnBlockIp/V4/{ipdata["HostId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
     def CreateProtectIP(self,ip:str,mac:str,siteid:int)->None:
         Path = '/api/Hosts/ProtectIpWithMac'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         macdata = self.GetIPv4Detail(ip,siteid)
         if not macdata : return
         Data = {'HostId': macdata['HostId'], 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
-    
     def GetProtectIPList(self,ip:str,siteid:int)->list[dict]:
         ipdata = self.GetIPv4Detail(ip,siteid)
         if not ipdata : return []
         Path = f'/api/Hosts/IpProtection/Table/{ipdata["IpAddressId"]}'
-        Header = {'Authorization':self.Token}
         result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        for i in r :
-            result.append({'Id':i['Id'],'IP':i['IP'],'MAC':i['MAC']})
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)
+            for i in r :
+                result.append({'Id':i['Id'],'IP':i['IP'],'MAC':i['MAC']})
         return result
 
     def DelProtectIP(self,ip:str,siteid:int)->None:
         ipProtectionIds =self.GetProtectIPList(ip,siteid)
-        Header = {'Authorization':self.Token}
         for ipProtectionId in ipProtectionIds:
             Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
-            requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            for retries in range(self.retriesnum):
+                Header = {'Authorization':self.Token}
+                r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 401:
+                    self.GetLoginToken()
 
     def CreateBindingIP(self,ip:str,siteid:int)->None:
         ipdata = self.GetIPv4Detail(IP=ip,siteid=siteid)
         if not ipdata : return
         Path = f'/api/Hosts/AddMacBindingIp/{ipdata["HostId"]}'
-        Header = {'Authorization':self.Token}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
-
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
     def DelIP(self,ip:str,siteid:int)->None:
         ipdata = self.GetIPv4Detail(ip,siteid)
         if not ipdata : return
         Path = f'/api/Hosts/Delete/Ip/{ipdata["HostId"]}'
-        Header = {'Authorization':self.Token}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
 #endregion
 
@@ -151,72 +222,123 @@ class AthenacWebAPILibry:
                     ,'filters':[
                         {'field':'Mac','value':MAC,'operator':'eq'}
                             ,{'field':'SiteId','value':SiteId,'operator':'eq'}]}}
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r=json.loads(r.text)['Data']
-        for i in r:
-            return {'MacAddressId':i['MacAddressId']
-            ,'HostName':i['HostName']
-            ,'HostWorkgroup':i['HostWorkgroup']
-            ,'IsRegisteded':i['IsRegisteded']
-            ,'RegisterType':i['RegisterType']
-            ,'RegisterUserId':i['RegisterUserId']
-            ,'RegisterUserName':i['RegisterUserName']
-            ,'IsIpBlockByUnAuth':i['IsIpBlockByUnAuth']
-            ,'IsPrivileged':i['IsPrivileged']
-            ,'IsOnline':i['IsOnline']
-            ,'OSType':i['OSType']
-            ,'SiteId':i['SiteId']}
+        r = None
+        for retriescount in range(self.retriesnum) :
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else:
+                return
+        if r:
+            r=json.loads(r.text)['Data']
+            for i in r:
+                return {'MacAddressId':i['MacAddressId']
+                ,'HostName':i['HostName']
+                ,'HostWorkgroup':i['HostWorkgroup']
+                ,'IsRegisteded':i['IsRegisteded']
+                ,'RegisterType':i['RegisterType']
+                ,'RegisterUserId':i['RegisterUserId']
+                ,'RegisterUserName':i['RegisterUserName']
+                ,'IsIpBlockByUnAuth':i['IsIpBlockByUnAuth']
+                ,'IsPrivileged':i['IsPrivileged']
+                ,'IsOnline':i['IsOnline']
+                ,'OSType':i['OSType']
+                ,'SiteId':i['SiteId']}
 
     def AuthMAC(self,mac:str,auth:bool,siteid:int)->None:
         macdata = self.GetMACDetail(mac,siteid)
         if not macdata : return
         if auth: Path =f'/api/Hosts/AuthorizeMac/{macdata["MacAddressId"]}'
         else: Path =f'/api/Hosts/UnauthorizeMac/{macdata["MacAddressId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else :
+                return
     
     def BlockMAC(self,mac:str,block:bool,siteid:int)->None:
         macdata = self.GetMACDetail(mac,siteid)
         if not macdata : return
         if block: Path = f'/api/Hosts/BlockMac/{macdata["MacAddressId"]}'
         else: Path = f'/api/Hosts/UnblockMac/{macdata["MacAddressId"]}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,verify=False)
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else:
+                return
 #endregion 
 
 #region abnormal network related
 
     def GetMulicastDeviceList(self)->list[dict]:
         Path='/api/BroadcastOverload/IPv6'
-        Header ={'Authorization':self.Token}
+        r = None
         result = []
-        r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        for i in r:
-            result.append({'Ip':i['Ip'],'Mac':i['Mac']})
+        for retriescount in range(self.retriesnum):
+            Header ={'Authorization':self.Token}
+            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: 
+                return result
+        if r :
+            r = json.loads(r.text)
+            for i in r:
+                result.append({'Ip':i['Ip'],'Mac':i['Mac']})
         return result
     
     def GetOutofVLANList(self)->list[dict]:
         Path = '/api/OutOfVlan/Query'
         Data={'take':0}
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        r = None
         result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r = json.loads(r.text)['Data']
-        for i in r:
-            result.append({'Ip':i['Ip'],'Mac':i['Mac']})
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else:
+                return result
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'Ip':i['Ip'],'Mac':i['Mac']})
         return result
     
     def GetIPconflictDeviceList(self)->list[dict]:
         Path = '/api/IpConflict/Query'
         Data={'take':0}
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        r = None
         result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r = json.loads(r.text)['Data']
-        for i in r:
-            result.append({'Ip':i['Ip'],'Macs':i['Macs']})
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'Ip':i['Ip'],'Macs':i['Macs']})
         return result
 
 #endregion
@@ -225,53 +347,96 @@ class AthenacWebAPILibry:
 
     def GetRadiusClientList(self,siteid:int)->list[dict]:
         Path = f'/api/Site/{str(siteid)}/RadiusClients'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {'take':0}
+        r = None
         result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r = json.loads(r.text)['Data']
-        for i in r:
-            result.append({'Id':i['Id']
-            ,'IP':i['IP']
-            ,'SubnetMask':i['SubnetMask']
-            ,'RadiusAVPName':i['RadiusAVPName']
-            ,'SharedSecret':i['SharedSecret']})
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'Id':i['Id']
+                ,'IP':i['IP']
+                ,'SubnetMask':i['SubnetMask']
+                ,'RadiusAVPName':i['RadiusAVPName']
+                ,'SharedSecret':i['SharedSecret']})
         return result
     
-    def GetRadiusSetting(self,siteid:int)->dict:
+    def GetRadiusSetting(self,siteid:int)->dict | None:
         Path = f'/api/Site/{str(siteid)}/Radius'
-        Header = {'Authorization':self.Token}
-        r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
-        r = json.loads(r.text)
-        return r
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return
+        if r :
+            r = json.loads(r.text)
+            return r
     
     def UpdateRadiusSetting(self,Data:RadiusSetting)->None:
         Path = '/api/Site/Radius'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
     
     def AddVLANMapping(self,name:str,Type:int,vlanid:int | None,siteid:int)->None:
         Path = '/api/Site/RadiusVLanMapping'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        
         Data = {"AssignVlan": vlanid, "MappingValue": name, "MappingValueType": Type, "SiteId": siteid}
         if vlanmappingdata:= self.GetVLANMapping(name,Type,siteid):
             Data['Id']=vlanmappingdata['Id']
-            requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            for retriescount in range(self.retriesnum):
+                Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+                r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 401:
+                    self.GetLoginToken()
         else:
-            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            for retriescount in  range(self.retriesnum):
+                Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+                r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 401:
+                    self.GetLoginToken()
     
     def ClearAllMappingatSite(self,siteid:int)->None:
         vlanmappings = self.GetVLANMappingList(siteid)
         for vlanmapping in vlanmappings:
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmapping["Id"])}'
-            Header = {'Authorization':self.Token}
-            requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+            for retriescount in  range(self.retriesnum):
+                Header = {'Authorization':self.Token}
+                r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 401:
+                    self.GetLoginToken()
 
     def DelVLANMapping(self,name:str,Type:int,siteid:int)->None:
         if vlanmappingdata:= self.GetVLANMapping(name,Type,siteid):
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmappingdata["Id"])}'
-            Header = {'Authorization':self.Token}
-            requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+            for retriescount in range(self.retriesnum):
+                Header = {'Authorization':self.Token}
+                r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 401:
+                    self.GetLoginToken()
     
     def GetVLANMapping(self,name:str,Type:int,siteid:int)->dict | None:
         r = self.GetVLANMappingList(siteid)
@@ -282,24 +447,37 @@ class AthenacWebAPILibry:
     
     def GetVLANMappingList(self,siteid:int)->list[dict]:
         Path = f'/api/Site/{str(siteid)}/VLanMapping'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         Data = {'take':0}
+        r = None
         result = []
-        r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-        r = json.loads(r.text)['Data']
-        for i in r:
-            result.append({'AssignVlan':i['AssignVlan']
-                        ,'Id':i['Id']
-                        ,'MappingValue':i['MappingValue']
-                        ,'MappingValueType':i['MappingValueType']
-                        ,'SiteId':i['SiteId']
-                        ,'SiteName':i['SiteName']})
+        for retriescount in range(self.retriesnum):   
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}     
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'AssignVlan':i['AssignVlan']
+                            ,'Id':i['Id']
+                            ,'MappingValue':i['MappingValue']
+                            ,'MappingValueType':i['MappingValueType']
+                            ,'SiteId':i['SiteId']
+                            ,'SiteName':i['SiteName']})
         return result
 
     def AddRadiusClient(self,Data:RadiusClient)->None:
         Path = '/api/Site/RadiusClient'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
     
     def ClearAllRadiusClientatSite(self,siteid:int)->None:
         radiusclients = self.GetRadiusClientList(siteid)
@@ -308,8 +486,13 @@ class AthenacWebAPILibry:
              
     def DelRadiusClient(self,id:int)->None:
         Path = f'/api/Site/RadiusClient/{str(id)}'
-        Header = {'Authorization':self.Token}
-        requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
 #endregion
 
@@ -317,26 +500,44 @@ class AthenacWebAPILibry:
 
     def SwitchMACSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
-
+        for restiescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
     
     def SwitchIPSiteSaveMode(self,enable:bool,siteid:int)->None:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
-
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
     
     def SwitchSiteMonitMode(self,enable:bool,siteid:int)->None:
         Path = f'/api/Sites/{siteid}/ToggleMonitorMode'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code ==401:
+                self.GetLoginToken()
     
     def UpdateBlockMessage(self,config:BlockMessageSetting,siteid:int)->None:
         # if not config.EnableVerifyModule: config.VerifyModule. ADverify,DBverify,LDAPverify = False,False,False
         Path = f'/api/Site/{siteid}/BlockMessage'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(config.__dict__),verify=False)
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(config.__dict__),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
 
 #endregion
 
