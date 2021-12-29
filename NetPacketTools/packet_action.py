@@ -15,68 +15,61 @@ class PacketAction:
       self.globalIp = [x for x in self.nic.ips[6] if '2001:' in x][0]
       self.gatewayIp = conf.route.route('0.0.0.0')[2] 
       self.gatewatIpv6 = conf.route6.route('::')[2]
-      
-   def DHCPv4ClientTest(self,count:int=70)-> str:
-      logStr = ''
-      yIP,tranId = '',0
-      fakeMACNum =186916976721920
-      for i in range(count):
-         fakeMAC= bytearray.fromhex(hex(fakeMACNum)[2::])
-         DHCPDiscover = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
+   
+   def GetIPfromDHCPv4(self,tranId:int,mac:str)->dict:
+      macformat = bytearray.fromhex(''.join(mac.split(':')))
+      DHCPDiscover = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
+         /IP(src='0.0.0.0',dst='255.255.255.255')\
+            /UDP(sport=68,dport=67)\
+               /BOOTP(xid=tranId,chaddr=macformat)\
+                  /DHCP(options=[('message-type','discover'),'end'])
+      resultoffer ,numsoffer = srp(DHCPDiscover,timeout=5,iface=self.nicname)
+      if resultoffer:
+         yIP = resultoffer[0][1][BOOTP].yiaddr
+         tranId = resultoffer[0][1][BOOTP].xid
+         DHCPRequest = Ether(src=self.mac,dst='ff:ff:ff:ff:ff:ff')\
             /IP(src='0.0.0.0',dst='255.255.255.255')\
                /UDP(sport=68,dport=67)\
-                  /BOOTP(xid=tranId,chaddr=fakeMAC)\
-                     /DHCP(options=[('message-type','discover'),'end'])
-         resultoffer ,numsoffer = srp(DHCPDiscover,timeout=5,iface=self.nicname)
-         if not resultoffer:
-            logStr+='No receive DHCP Offer ID: %s \n' %(tranId)
-         else:
-            yIP = resultoffer[0][1][BOOTP].yiaddr
-            tranId = resultoffer[0][1][BOOTP].xid
-            DHCPRequest = Ether(src=self.mac,dst='ff:ff:ff:ff:ff:ff')\
-               /IP(src='0.0.0.0',dst='255.255.255.255')\
-                  /UDP(sport=68,dport=67)\
-                     /BOOTP(xid=tranId,chaddr=fakeMAC)\
-                        /DHCP(options=[('message-type','request'),('requested_addr',yIP),'end'])
-            resultACK,numsACK=srp(DHCPRequest,timeout=5,iface=self.nicname)
-            if not resultACK: logStr +='no Receive DHCP ACK %s | IP: %s \n'%(tranId,yIP)
-         tranId+=1
-         fakeMACNum+=1
-      return logStr
-
-   def DHCPv6ClientTest(self,count:int=700)-> str:
-      logStr = ''
-      tranId,Iana,ClientId,ServerId = 0,'','',''
-      fakeMACNum =186916976721920
-      for i in range(count):
-         DHCPv6Solicit = Ether(src =self.mac,dst='33:33:00:01:00:02')\
+                  /BOOTP(xid=tranId,chaddr=macformat)\
+                     /DHCP(options=[('message-type','request'),('requested_addr',yIP),'end'])
+         resultACK,numsACK=srp(DHCPRequest,timeout=5,iface=self.nicname)
+      else:
+         return {'Status':False,'TranId':tranId,'IP':''}
+      if resultACK: 
+         return {'Status':True,'TranId':tranId,'IP':yIP}
+      else:
+         return {'Status':False,'TranId':tranId,'IP':yIP}
+      
+   def GetIPfromDHCPv6(self,tranId:int,mac:str)->dict:
+      duidformat = bytearray.fromhex('000100012796d07c'+''.join(mac.split(':')))
+      iaidformat = int('08' + ''.join(mac.split(':'))[0:6],16)
+      DHCPv6Solicit = Ether(src =self.mac,dst='33:33:00:01:00:02')\
+         /IPv6(src=self.linklocalIp,dst='ff02::1:2')\
+            /UDP(sport=546,dport=547)\
+               /DHCP6_Solicit(trid=tranId)\
+                  /DHCP6OptElapsedTime()\
+                     /DHCP6OptClientId(duid=duidformat)\
+                        /DHCP6OptIA_NA(iaid=iaidformat)\
+                           /DHCP6OptOptReq()
+      resultAdvertise ,numAdvertise = srp(DHCPv6Solicit,timeout=20,iface=self.nicname)
+      if resultAdvertise:
+         DHCPv6Request =Ether(src =self.mac,dst='33:33:00:01:00:02')\
             /IPv6(src=self.linklocalIp,dst='ff02::1:2')\
                /UDP(sport=546,dport=547)\
-                  /DHCP6_Solicit(trid=tranId)\
+                  /DHCP6_Request(trid=tranId)\
                      /DHCP6OptElapsedTime()\
-                        /DHCP6OptClientId(duid=bytearray.fromhex('000100012796d07c'+hex(fakeMACNum)[2::]))\
-                           /DHCP6OptIA_NA(iaid=0x08aa0000)\
-                              /DHCP6OptOptReq()
-         resultAdvertise ,numAdvertise = srp(DHCPv6Solicit,timeout=20,iface=self.nicname)
-         if not resultAdvertise:
-            logStr +='No receive DHCPv6 Advertise ID: %s \n' %(tranId)
-         else:
-            DHCPv6Request =Ether(src =self.mac,dst='33:33:00:01:00:02')\
-               /IPv6(src=self.linklocalIp,dst='ff02::1:2')\
-                  /UDP(sport=546,dport=547)\
-                     /DHCP6_Request(trid=tranId)\
-                        /DHCP6OptElapsedTime()\
-                           /DHCP6OptClientId(duid=resultAdvertise[0][1][DHCP6OptClientId].duid)\
-                              /DHCP6OptServerId(duid= resultAdvertise[0][1][DHCP6OptServerId].duid)\
-                                 /DHCP6OptIA_NA(iaid=resultAdvertise[0][1][DHCP6OptIA_NA].iaid,T1=resultAdvertise[0][1][DHCP6OptIA_NA].T1
-                                 ,T2=resultAdvertise[0][1][DHCP6OptIA_NA].T2,ianaopts=resultAdvertise[0][1][DHCP6OptIA_NA].ianaopts)\
-                                    /DHCP6OptOptReq()
-            resultACK6 ,numACK6 = srp(DHCPv6Request,timeout=20,iface=self.nicname)
-            if not resultACK6:
-               logStr+='No receive DHCPv6 ACK ID: %s | IP: %s \n' %(tranId,resultAdvertise[0][1][DHCP6OptIAAddress].addr)
-         tranId+=1
-         fakeMACNum+=1
-      return logStr
+                        /DHCP6OptClientId(duid=resultAdvertise[0][1][DHCP6OptClientId].duid)\
+                           /DHCP6OptServerId(duid= resultAdvertise[0][1][DHCP6OptServerId].duid)\
+                              /DHCP6OptIA_NA(iaid=resultAdvertise[0][1][DHCP6OptIA_NA].iaid,T1=resultAdvertise[0][1][DHCP6OptIA_NA].T1
+                              ,T2=resultAdvertise[0][1][DHCP6OptIA_NA].T2,ianaopts=resultAdvertise[0][1][DHCP6OptIA_NA].ianaopts)\
+                                 /DHCP6OptOptReq()
+         resultACK6 ,numACK6 = srp(DHCPv6Request,timeout=20,iface=self.nicname)
+      else:
+          return {'Status':False,'TranId':tranId,'IP':''}
+      if resultACK6:
+         return {'Status':True,'TranId':tranId,'IP':resultAdvertise[0][1][DHCP6OptIAAddress].addr}
+      else:
+         return {'Status':False,'TranId':tranId,'IP':resultAdvertise[0][1][DHCP6OptIAAddress].addr}
 
    def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
       ARPRequest = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\

@@ -341,26 +341,6 @@ class TestRadius:
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset)
 
 
-
-# def DHCPpressureTestCase()->None:
-#     WriteLog('DHCPpressureTestCaseStart')
-#     try:
-#         log = lan1_.DHCPv4ClientTest()
-#         WriteLog(log)
-#     except Exception as e:
-#         WriteLog('Exception : ' + str(e))
-#     WriteLog('DHCPpressureTestCaseFinish')
-
-# def DHCPv6pressureTestCase()->None:
-#     WriteLog('DHCPv6pressureTestCaseStart')
-#     try:
-#         log = lan1_.DHCPv6ClientTest()
-#         WriteLog(log)
-#     except Exception as e:
-#         WriteLog('Exception : ' + str(e))
-#     WriteLog('DHCPpv6ressureTestCaseFinish')
-
-
 with open('settingconfig.json') as f:
     settingconfig_ = json.loads(f.read())
 serverIP_ = settingconfig_['serverIP']
