@@ -8,18 +8,19 @@ from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusCli
 
 class TestDHCP:
     def test_DHCPv4(self)->None:
-        macint = 186916976721920        
-        for tranId in range(5):
+        macint = 186916976721920
+        for tranId in range(70):
             result =  lan1_.GetIPfromDHCPv4(tranId=tranId,mac=hex(macint)[2::])
-            assert result['Status'],f'False'
+            assert result,f'False : get IP fail by DHCPv4 at TranID {tranId}'
             macint +=1
+            
     def test_DHCPv6(self)->None:
-        macint = 186916976721920        
-        for tranId in range(5):
+        macint = 186916976721920
+        for tranId in range(300):
             result =  lan1_.GetIPfromDHCPv6(tranId=tranId,mac=hex(macint)[2::])
-            assert result['Status'],f'False'
+            assert result,f'False : get IPv6 fail by DHCPv6 at TranID {tranId}'
             macint +=1
-
+    
 with open('settingconfig.json') as f:
     settingconfig_ = json.loads(f.read())
 serverIP_ = settingconfig_['serverIP']

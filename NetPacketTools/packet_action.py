@@ -16,7 +16,7 @@ class PacketAction:
       self.gatewayIp = conf.route.route('0.0.0.0')[2] 
       self.gatewatIpv6 = conf.route6.route('::')[2]
    
-   def GetIPfromDHCPv4(self,tranId:int,mac:str)->dict:
+   def GetIPfromDHCPv4(self,tranId:int,mac:str)->str | None:
       macformat = bytearray.fromhex(''.join(mac.split(':')))
       DHCPDiscover = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
          /IP(src='0.0.0.0',dst='255.255.255.255')\
@@ -33,14 +33,12 @@ class PacketAction:
                   /BOOTP(xid=tranId,chaddr=macformat)\
                      /DHCP(options=[('message-type','request'),('requested_addr',yIP),'end'])
          resultACK,numsACK=srp(DHCPRequest,timeout=5,iface=self.nicname)
-      else:
-         return {'Status':False,'TranId':tranId,'IP':''}
-      if resultACK: 
-         return {'Status':True,'TranId':tranId,'IP':yIP}
-      else:
-         return {'Status':False,'TranId':tranId,'IP':yIP}
+      else: return 
+      if resultACK :
+         return yIP
       
-   def GetIPfromDHCPv6(self,tranId:int,mac:str)->dict:
+      
+   def GetIPfromDHCPv6(self,tranId:int,mac:str)->str | None:
       duidformat = bytearray.fromhex('000100012796d07c'+''.join(mac.split(':')))
       iaidformat = int('08' + ''.join(mac.split(':'))[0:6],16)
       DHCPv6Solicit = Ether(src =self.mac,dst='33:33:00:01:00:02')\
@@ -65,11 +63,9 @@ class PacketAction:
                                  /DHCP6OptOptReq()
          resultACK6 ,numACK6 = srp(DHCPv6Request,timeout=20,iface=self.nicname)
       else:
-          return {'Status':False,'TranId':tranId,'IP':''}
+         return 
       if resultACK6:
-         return {'Status':True,'TranId':tranId,'IP':resultAdvertise[0][1][DHCP6OptIAAddress].addr}
-      else:
-         return {'Status':False,'TranId':tranId,'IP':resultAdvertise[0][1][DHCP6OptIAAddress].addr}
+         return resultAdvertise[0][1][DHCP6OptIAAddress].addr
 
    def ARPBlockCheck(self,srcIP:str,dstIP:str,ProbeMAC:str)->bool:
       ARPRequest = Ether(src =self.mac,dst='ff:ff:ff:ff:ff:ff')\
