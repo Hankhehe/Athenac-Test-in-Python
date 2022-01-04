@@ -18,3 +18,15 @@ class CustomFieldVerifyType(Enum):
     General = 0
     Guest = 1
     Staff = 2
+
+class SendHostAgentType(Enum):
+    Login = 0
+    Logout = 1
+    UnblockCRequest = 2
+    BlockRequest = 3
+
+class RegisterTypebyAutoRegist(Enum):
+    Closed = 0
+    Packet = 1
+    VBS = 2
+

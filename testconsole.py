@@ -1,33 +1,46 @@
-import threading,time,pytest_check as check,asyncio
+import threading,time,pytest_check as check,asyncio,re,json
 from scapy import *
 from NetPacketTools.packet_action import PacketAction
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.athenac_core_API_libry import AthenacCoreAPILibry
-from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
+from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,SendHostAgentType,RegisterTypebyAutoRegist
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from NetPacketTools.packet_action_test import PacketActionTest
 
-macint = 186916976721920
-threads = []
-results = []
-lan = PacketAction('Ethernet1')
-pass
-for i in range(10):
-    threads.append(threading.Thread(target=lan.GetIPfromDHCPv6,args=[i,hex(macint+i)[2::1],results]))
-    threads[i].start()
-for i in range(len(threads)):
-    threads[i].join()
-
-print(f'count : ---------{len(results)}')
+coreAPI = AthenacCoreAPILibry(f'http://192.168.25.3:18002','11','22')
+coreAPI.SendHostUserbyAgent(mac = '005056AEAA69',domainname='Local',remotetype=False,sendtype=SendHostAgentType.Login.value)
 pass
 
-# async def DHCPv4(tranId:int,mac:str)-> dict:
-#     a = lan1_.GetIPfromDHCPv4(mac=mac,tranId=tranId)
-#     return a
 
-# result = []
-# macint = 186916976721920
-# lan1_ = PacketAction('Ethernet1')
-# tasks =[DHCPv4(tranId=i,mac=hex(macint+i)[2::]) for i in range(10)]
-# result.append( asyncio.run(asyncio.wait(tasks)))
-# pass
+
+
+
+
+#------------------------------------------------------------------------------------------------------------------------------------
+with open('settingconfig.json') as f:
+    settingconfig_ = json.loads(f.read())
+serverIP_ = settingconfig_['serverIP']
+APIaccount_ = settingconfig_['APIaccount']
+APIpwd_ = settingconfig_['APIpwd']
+AthenacWebAPI_ = AthenacWebAPILibry(f'http://{serverIP_}:8000',APIaccount_,APIpwd_)
+AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{serverIP_}:18000',settingconfig_['probeID'],settingconfig_['daemonID'])
+AthenacCoreAPI18002 = AthenacCoreAPILibry(f'http://{serverIP_}:18002',settingconfig_['probeID'],settingconfig_['daemonID'])
+TestIPv4_ = settingconfig_['TestIPv4']
+TestIPv6_ = settingconfig_['TestIPv6']
+ProbeMAC_ = settingconfig_['ProbeMAC']
+VLANIDMapping_ = settingconfig_['VLANIDMapping']
+SiteID_ = settingconfig_['SiteId']
+DynamicAVPID_ = settingconfig_['DynamicAVPID']
+AuthAVPID_ = settingconfig_['AuthAVPID']
+lan1_ = PacketAction(settingconfig_['lan1'])
+lan1MACUpper_ = ''.join(lan1_.mac.upper().split(':'))
+lan2_ = PacketAction(settingconfig_['lan2'])
+lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
+time.sleep(5)
+
+
+# AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.VBS.value,siteid=SiteID_)
+# AthenacWebAPI_.ClearAllDomainServerforAutoRegist(siteid=SiteID_)
+# AthenacWebAPI_.AddDomainServerforAutoRegist(domainname='PIXIS',ip='192.168.10.201',siteid=SiteID_)
+AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.Login.value)
+pass

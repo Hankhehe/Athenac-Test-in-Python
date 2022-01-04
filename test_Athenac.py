@@ -3,7 +3,7 @@ from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.athenac_core_API_libry import AthenacCoreAPILibry
-from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
+from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,SendHostAgentType,RegisterTypebyAutoRegist
 from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting
 
 class TestIPAM:
@@ -107,6 +107,20 @@ class TestIPAM:
             check.is_true(MACdata['IsRegisteded'] == 1 and MACdata['RegisterUserId'] == LDAPaccount
             ,f' verify fail, MAC is {lan2MACUpper_} from verify by LDAP')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
+
+class CancelTestAgent:
+    def canceltest_HostAgent(self)->None:
+        AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.VBS.value,siteid=SiteID_)
+        AthenacWebAPI_.ClearAllDomainServerforAutoRegist(siteid=SiteID_)
+        AthenacWebAPI_.AddDomainServerforAutoRegist(domainname='PIXIS',ip='192.168.10.201',siteid=SiteID_)
+        AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.Login.value)
+        MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
+        if MACData :
+            check.is_true(MACData['IsRegisteded'],f'this MAC {lan2_.mac} register is not true')
+            check.is_true(MACData['RegisterType'] == 3,f'this MAC {lan2_.mac} register type is not ad registtype' )
+
+            
+
 
 class TestAbnormalDevice:
     def test_IPconflictTestCase(self)->None:
@@ -348,6 +362,7 @@ APIaccount_ = settingconfig_['APIaccount']
 APIpwd_ = settingconfig_['APIpwd']
 AthenacWebAPI_ = AthenacWebAPILibry(f'http://{serverIP_}:8000',APIaccount_,APIpwd_)
 AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{serverIP_}:18000',settingconfig_['probeID'],settingconfig_['daemonID'])
+AthenacCoreAPI18002 = AthenacCoreAPILibry(f'http://{serverIP_}:18002',settingconfig_['probeID'],settingconfig_['daemonID'])
 TestIPv4_ = settingconfig_['TestIPv4']
 TestIPv6_ = settingconfig_['TestIPv6']
 ProbeMAC_ = settingconfig_['ProbeMAC']
