@@ -7,8 +7,11 @@ from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,Send
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from NetPacketTools.packet_action_test import PacketActionTest
 
-coreAPI = AthenacCoreAPILibry(f'http://192.168.25.3:18002','11','22')
-coreAPI.SendHostUserbyAgent(mac = '005056AEAA69',domainname='Local',remotetype=False,sendtype=SendHostAgentType.Login.value)
+WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
+coreAPI = AthenacCoreAPILibry('http://192.168.21.180:18002','11','22')
+macdata = WebAPI.GetMACDetail(MAC='005056AEAA69',SiteId=2)
+pass
+coreAPI.SendHostUserbyAgent(mac = '005056AEAA69',domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.UnblockCRequest.value)
 pass
 
 

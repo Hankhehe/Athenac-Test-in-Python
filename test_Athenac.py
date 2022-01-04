@@ -108,19 +108,38 @@ class TestIPAM:
             ,f' verify fail, MAC is {lan2MACUpper_} from verify by LDAP')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
-class CancelTestAgent:
-    def canceltest_HostAgent(self)->None:
+class TestAgent:
+    def test_HostAgent(self)->None:
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.VBS.value,siteid=SiteID_)
         AthenacWebAPI_.ClearAllDomainServerforAutoRegist(siteid=SiteID_)
         AthenacWebAPI_.AddDomainServerforAutoRegist(domainname='PIXIS',ip='192.168.10.201',siteid=SiteID_)
+        AthenacWebAPI_.DelMAC(mac=lan2_.mac,siteid=SiteID_)
+        lan2_.SendARPReply(lan2_.Ip,Count=3,WaitSec=1)
+        time.sleep(10)
         AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.Login.value)
         MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
         if MACData :
-            check.is_true(MACData['IsRegisteded'],f'this MAC {lan2_.mac} register is not true')
-            check.is_true(MACData['RegisterType'] == 3,f'this MAC {lan2_.mac} register type is not ad registtype' )
-
-            
-
+            check.is_true(MACData['IsRegisteded'],f'this MAC {lan2_.mac} register is not true, when loging by used AD account')
+            check.is_true(MACData['RegisterType'] == 3,f'this MAC {lan2_.mac} register type is not AD, when loging by used AD account' )
+        AthenacWebAPI_.DelIP(lan2_.Ip,siteid=SiteID_)
+        time.sleep(60*4)
+        MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
+        if MACData :
+            check.is_false(MACData['IsRegisteded'],f'This MAC {lan2_.mac} register is not false, when IP start before 2 min')
+            check.is_true(MACData['RegisterType'] == 0,f'this MAC {lan2_.mac} register type is not default, when ip start before 2 min' )
+        AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.UnblockCRequest.value)
+        MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
+        if MACData :
+            check.is_true(MACData['IsRegisteded'],f'this MAC {lan2_.mac} register is not true,when login by used AD account after removed auto regist')
+            check.is_true(MACData['RegisterType'] == 3,f'this MAC {lan2_.mac} register type is not AD,when login by used AD account after removed auto regist' )
+        AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='Local',remotetype=False,sendtype=SendHostAgentType.Login.value)
+        MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
+        if MACData:
+            check.is_false(MACData['IsRegisteded'],f'This MAC {lan2_.mac} register is not false, when loging by used local account')
+            check.is_true(MACData['RegisterType'] == 0,f'This MAC {lan2_.mac} regist type is not default, when loging by used local account' )
+        AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.Closed.value,siteid=SiteID_)
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
 class TestAbnormalDevice:
     def test_IPconflictTestCase(self)->None:
@@ -183,7 +202,6 @@ class TestAbnormalDevice:
         for mutidevice in mutidevices:
             if mutidevice['Ip'] == lan1_.globalIp and mutidevice['Mac'] == lan1MACUpper_: checkflag = True; break
         check.is_true(checkflag,f' MultcastTestCase {lan1_.globalIp}')
-
 
 class TestRadius:
     def test_Radius8021XTestCase(self)->None:

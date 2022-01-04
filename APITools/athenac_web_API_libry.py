@@ -51,88 +51,6 @@ class AthenacWebAPILibry:
         if r :
             return json.loads(r.text)
 
-    def GetUnknowDHCPList(self)->list[dict]:
-        Data={'take':0}
-        Path = '/api/UnknownDhcpServer/Query'
-        result = []
-        r = None
-        for retriescount in range(self.retriesnum):
-            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-            if r.status_code == 200:
-                break
-            elif r.status_code == 401:
-                self.GetLoginToken()
-            else: return result
-        if r :
-            r = json.loads(r.text)['Data']
-            for i in r:
-                result.append({'Ip':i['Ip'],'Mac':i['Mac'],'ServerType':i['ServerType']})
-        return result
-    
-    def GetBrocastDeviceList(self)->list[dict]:
-        Path='/api/BroadcastOverload/IPv4'
-        result = []
-        r = None
-        for retriescount in range(self.retriesnum):
-            Header ={'Authorization':self.Token}
-            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
-            if r.status_code == 200:
-                break
-            elif r.status_code == 401:
-                self.GetLoginToken()
-            else: return result
-        if r :
-            r = json.loads(r.text)
-            for i in r:
-                result.append({'Ip':i['Ip'],'Mac':i['Mac']})
-        return result
-
-    def AddDomainServerforAutoRegist(self,domainname:str,ip:str,siteid:str)->None:
-        Path = '/api/Site/Domain'
-        Data = {'Ip':ip,'Name':domainname,'SiteId':siteid,'URL':''}
-        for retriescount in range(self.retriesnum):
-            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-            if r.status_code == 200:
-                break
-            elif r.status_code == 401:
-                self.GetLoginToken()
-    
-    def GetDomainServerListforAutoRegist(self,siteid)->list:
-        Path = f'/api/Site/{siteid}/Domain'
-        Data = {'take':0}
-        result = []
-        r = None
-        for retriescount in range(self.retriesnum):
-            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-            if r.status_code == 200:
-                break
-            elif r.status_code == 401:
-                self.GetLoginToken()
-        if r :
-            r = json.loads(r.text)['Data']
-            for i in r :
-                result.append({'Id':i['Id'],'Ip':i['Ip'],'Name':i['Name'],'SiteId':i['SiteId'],'URL':i['URL']})
-        return result
-
-    def DelDomainServerforAutoRegist(self,siteid:int,id:int)->None:
-        Path = f'/api/Site/{siteid}/Domain/{id}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        for retriescount in range(self.retriesnum):
-            r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
-            if r.status_code == 200:
-                break
-            elif r.status_code == 401:
-                self.GetLoginToken()
-    
-    def ClearAllDomainServerforAutoRegist(self,siteid:int)->None:
-        domainservers = self.GetDomainServerListforAutoRegist(siteid=siteid)
-        for domainserver in domainservers:
-            self.DelDomainServerforAutoRegist(siteid=siteid,id=domainserver['Id'])
-
-
 #region IP Related
     def GetIPv4Detail(self,IP:str,siteid:int)->dict | None:
         Path = '/api/Hosts/Ipv4'
@@ -324,6 +242,20 @@ class AthenacWebAPILibry:
                 self.GetLoginToken()
             else:
                 return
+
+    def DelMAC(self,mac:str,siteid:int)->None:
+        mac = ''.join(re.split(':|-',mac)).upper()
+        macdata = self.GetMACDetail(MAC=mac,SiteId=siteid)
+        if not macdata: return
+        Path = f'/api/Hosts/DeleteMacs/{macdata["MacAddressId"]}'
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+                
 #endregion 
 
 #region abnormal network related
@@ -384,6 +316,43 @@ class AthenacWebAPILibry:
             r = json.loads(r.text)['Data']
             for i in r:
                 result.append({'Ip':i['Ip'],'Macs':i['Macs']})
+        return result
+
+    def GetUnknowDHCPList(self)->list[dict]:
+        Data={'take':0}
+        Path = '/api/UnknownDhcpServer/Query'
+        result = []
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'Ip':i['Ip'],'Mac':i['Mac'],'ServerType':i['ServerType']})
+        return result
+    
+    def GetBrocastDeviceList(self)->list[dict]:
+        Path='/api/BroadcastOverload/IPv4'
+        result = []
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header ={'Authorization':self.Token}
+            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return result
+        if r :
+            r = json.loads(r.text)
+            for i in r:
+                result.append({'Ip':i['Ip'],'Mac':i['Mac']})
         return result
 
 #endregion
@@ -595,6 +564,49 @@ class AthenacWebAPILibry:
             elif r.status_code == 401:
                 self.GetLoginToken()
 
+    def AddDomainServerforAutoRegist(self,domainname:str,ip:str,siteid:str)->None:
+        Path = '/api/Site/Domain'
+        Data = {'Ip':ip,'Name':domainname,'SiteId':siteid,'URL':''}
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def GetDomainServerListforAutoRegist(self,siteid)->list:
+        Path = f'/api/Site/{siteid}/Domain'
+        Data = {'take':0}
+        result = []
+        r = None
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r :
+                result.append({'Id':i['Id'],'Ip':i['Ip'],'Name':i['Name'],'SiteId':i['SiteId'],'URL':i['URL']})
+        return result
+
+    def DelDomainServerforAutoRegist(self,siteid:int,id:int)->None:
+        Path = f'/api/Site/{siteid}/Domain/{id}'
+        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+        for retriescount in range(self.retriesnum):
+            r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def ClearAllDomainServerforAutoRegist(self,siteid:int)->None:
+        domainservers = self.GetDomainServerListforAutoRegist(siteid=siteid)
+        for domainserver in domainservers:
+            self.DelDomainServerforAutoRegist(siteid=siteid,id=domainserver['Id'])
 
 #endregion
 
