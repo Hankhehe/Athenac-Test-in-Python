@@ -96,25 +96,6 @@ def IPconflictTestCase()->None:
         WriteLog('Exception : ' + str(e))
     WriteLog('IPconflictTestCaseSFinish')
 
-def DHCPpressureTestCase()->None:
-    WriteLog('DHCPpressureTestCaseStart')
-    try:
-        log = lan1_.DHCPv4ClientTest()
-        WriteLog(log)
-    except Exception as e:
-        WriteLog('Exception : ' + str(e))
-    WriteLog('DHCPpressureTestCaseFinish')
-
-def DHCPv6pressureTestCase()->None:
-    WriteLog('DHCPv6pressureTestCaseStart')
-    try:
-        log = lan1_.DHCPv6ClientTest()
-        WriteLog(log)
-    except Exception as e:
-        WriteLog('Exception : ' + str(e))
-    WriteLog('DHCPpv6ressureTestCaseFinish')
-
-
 def MACblockTestCase()->None:
     WriteLog('MACblockTestCaseStart')
     try:

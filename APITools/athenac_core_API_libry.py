@@ -1,4 +1,5 @@
 import requests,json,re,time
+from requests_toolbelt.adapters.source import SourceAddressAdapter
 
 class AthenacCoreAPILibry:
     def __init__(self,ServerIP:str,pixisprobeid:str,probedaemonId:str) -> None:
@@ -55,4 +56,11 @@ class AthenacCoreAPILibry:
         Header = {'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)  
 
+    def SendHotfixbyVBS(self,mac:str,ip:str)->None:
+        mac = ':'.join(re.split(':|-',mac)).upper()
+        Path = '/Vbs/Gethotfix'
+        Data = {'macs':mac,'Hotfixs':'Hotfix Test - KB123456','IPList':ip,'HotfixLastCheckTime':time.strftime('%Y/%m/%d'+' '+'%H:%M:%S')}
+        Header = {'Content-type':'application/x-www-form-urlencoded'}
+        requests.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
+    
 #endregion

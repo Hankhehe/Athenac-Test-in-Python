@@ -6,32 +6,13 @@ from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule
 from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting
 
-class TestIPAM:
-    def test_IPBlockCase(self)->None:
-            AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=True,siteid=SiteID_)
-            time.sleep(10)
-            check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f'False : Not Receive ARP {lan2_.Ip}')
-            lan2_.SendARPReply(IP=TestIPv4_,Count=2,WaitSec=2)
-            check.is_false(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_),f'False : Recive ARP Rqply {TestIPv4_} by Change IP')
-            AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=False,siteid=SiteID_)
+class Test:
+    def test_func(self,arg1:bool=True,arg2:bool=True):
+        check.is_true(arg1,'error 1-1')
+        check.is_true(arg2,'error 1-2')
 
-class cancelTest:
-    def calceltest_func(self):
-        check.is_true(False,'error 1-1')
-        check.is_true(True,'error 1-2')
-
-    def canceltest_func2(self):
-        check.is_true(True,'error 2-1')
-        check.is_true(True,'error 2-2')
-
-class CancelTest2:
-    def canceltest_func3(self):
-        check.is_true(False,'error 1-1')
-        check.is_true(True,'error 1-2')
-
-    def canceltest_func4(self):
-        check.is_true(True,'error 2-1')
-        check.is_true(True,'error 2-2')
+    def test_func2(self):
+        self.test_func(True,False)
 
 with open('settingconfig.json') as f:
     settingconfig_ = json.loads(f.read())

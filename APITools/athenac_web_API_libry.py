@@ -1,4 +1,4 @@
-import requests,json,re
+import requests,json,re,time
 from urllib import parse
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient,BlockMessageSetting
 
@@ -356,7 +356,7 @@ class AthenacWebAPILibry:
         return result
 
 #endregion
-    
+
 #region 802.1X related
 
     def GetRadiusClientList(self,siteid:int)->list[dict]:
@@ -595,8 +595,8 @@ class AthenacWebAPILibry:
 
     def DelDomainServerforAutoRegist(self,siteid:int,id:int)->None:
         Path = f'/api/Site/{siteid}/Domain/{id}'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
         for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
             r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
@@ -610,5 +610,105 @@ class AthenacWebAPILibry:
 
 #endregion
 
-    
+#region site、network、range related
 
+    def GetNetworkListbySite(self,siteid:int)->list:
+        Path = f'/api/Networks/Query'
+        r,filters,result = None,[],[]
+        filters.append({'field':'SiteId','operator':'eq','value':siteid})
+        Data = {'take':0,'filter':{'logic':'and','filters':filters}}
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r:
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'NetworkId':i['NetworkId']
+                ,'NetworkName':i['NetworkName']
+                ,'SiteId':i['SiteId']
+                ,'VlanID':i['VlanID']
+                ,'PixisProbeId':i['PixisProbeId']
+                ,'ProbeIp':i['ProbeIp']
+                ,'IsEnableMonitorMode':i['IsEnableMonitorMode']
+                ,'IsEnableDHCP':i['IsEnableDHCP']
+                ,'IpDualStackRule':i['IpDualStackRule']})
+        return result 
+
+#endregion
+
+#region PreCheck related
+
+    def CreateUnInstallKB(self,siteid:int,filterOS:str=None,filterdomain:str=None)->None:
+        Path = '/api/PreCheck/Create'
+        netlist = self.GetNetworkListbySite(siteid=siteid)
+        if netlist:
+            netidlist = []
+            for network in netlist:
+                netidlist.append(network['NetworkId'])
+        else : return
+        filtercondition = []
+        if filterOS:
+            filtercondition.append({'Name':'MacAddress.OSType','Operator':0,'Value':filterOS})
+        if filterdomain:
+            filtercondition.append({'Name':'MacAddress.HostWorkgroup','Operator':0,'Value':filterdomain})
+        precheckrule = [{'ThirdPartyInfoId':'Hotfix'
+        ,'PreCheckRuleDetails':[{'ComparativeValue':'KB1234567','CompareType':38,'PreCheckDataSource':0}]
+        ,'CustomFields':[]
+        ,'PreCheckRuleType':0
+        }]
+        Data = {'EnableTime':time.strftime('%Y/%m/%d'+' '+'%H:%M:%S')
+        ,'PreCheckRules':precheckrule
+        ,'FilterConditionalList':filtercondition
+        ,'NetworkIdList':netidlist
+        ,'Name':'Uninstall hotfix from test'}
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+
+    def GetPrecheckRuleList(self)->list:
+        Path = '/api/PreCheck/Query'
+        Data = {'Take':0}
+        r = None
+        result = []
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r:
+            r = json.loads(r.text)['Data']
+            for i in r:
+                result.append({'Id':i['Id']
+                ,'Name':i['Name']
+                ,'SystemOrThirdPartyName':i['SystemOrThirdPartyName']
+                ,'IsEnabled':i['IsEnabled']
+                ,'EnableTime':i['EnableTime']
+                })
+        return result
+
+    def DelPrecheckRule(self,precheckid:int)->None:
+        Path = f'/api/PreCheck/Delete/{precheckid}'
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/x-www-form-urlencoded'}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def ClearAllPrecheckRule(self)->None:
+        precheckdatas = self.GetPrecheckRuleList()
+        for precheckdata in precheckdatas:
+            self.DelPrecheckRule(precheckid=precheckdata['Id'])
+
+#endregion
