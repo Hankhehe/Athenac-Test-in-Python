@@ -243,6 +243,33 @@ class AthenacWebAPILibry:
             else:
                 return
 
+    def SetPrecheckWhiteMAC(self,mac:str,white:bool,siteid:int)->None:
+        macdata = self.GetMACDetail(MAC=mac,SiteId=siteid)
+        if macdata and white:
+            Path = f'/api/Hosts/SetPreCheckWhiteList/{macdata["MacAddressId"]}'
+        elif macdata and not white:
+            Path = f'/api/Hosts/CancelPreCheckWhiteList/{macdata["MacAddressId"]}'
+        else: return
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token}
+            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+
+    def CheckPrecheckbyMAC(self,mac:str,siteid:int)->None:
+        macdata = self.GetMACDetail(MAC=mac,SiteId=siteid)
+        if macdata:
+            Path = f'/api/Hosts/PreCheckManualDoWork/{macdata["MacAddressId"]}'
+            for retriescount in range(self.retriesnum):
+                Header = {'Authorization':self.Token}
+                r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+                if r.status_code == 200:
+                    break
+                elif r.status_code == 401:
+                    self.GetLoginToken()
+            
     def DelMAC(self,mac:str,siteid:int)->None:
         mac = ''.join(re.split(':|-',mac)).upper()
         macdata = self.GetMACDetail(MAC=mac,SiteId=siteid)
@@ -642,8 +669,17 @@ class AthenacWebAPILibry:
 
 #region PreCheck related
 
-    def CreateUnInstallKB(self,siteid:int,filterOS:str=None,filterdomain:str=None)->None:
+    def CreatePrecheckRule(self,Data:dict)->None:
         Path = '/api/PreCheck/Create'
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+
+    def CreateUnInstallKBforPrecheckRule(self,siteid:int,KBNumber:int,filterOS:str=None,filterdomain:str=None)->None:
         netlist = self.GetNetworkListbySite(siteid=siteid)
         if netlist:
             netidlist = []
@@ -656,7 +692,7 @@ class AthenacWebAPILibry:
         if filterdomain:
             filtercondition.append({'Name':'MacAddress.HostWorkgroup','Operator':0,'Value':filterdomain})
         precheckrule = [{'ThirdPartyInfoId':'Hotfix'
-        ,'PreCheckRuleDetails':[{'ComparativeValue':'KB1234567','CompareType':38,'PreCheckDataSource':0}]
+        ,'PreCheckRuleDetails':[{'ComparativeValue':'KB'+str(KBNumber),'CompareType':38,'PreCheckDataSource':0}]
         ,'CustomFields':[]
         ,'PreCheckRuleType':0
         }]
@@ -664,14 +700,33 @@ class AthenacWebAPILibry:
         ,'PreCheckRules':precheckrule
         ,'FilterConditionalList':filtercondition
         ,'NetworkIdList':netidlist
-        ,'Name':'Uninstall hotfix from test'}
-        for retriescount in range(self.retriesnum):
-            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-            if r.status_code == 200:
-                break
-            elif r.status_code == 401:
-                self.GetLoginToken()
+        ,'Name':'Uninstall KB ON VBS from test'}
+        self.CreatePrecheckRule(Data=Data)
+
+    def CreateHotfixforPrecheckRule(self,siteid:int,hotfixcount:int,checkday:int,filterOS:str=None,filterdomain:str=None)->None:
+        netlist = self.GetNetworkListbySite(siteid=siteid)
+        if netlist:
+            netidlist = []
+            for network in netlist:
+                netidlist.append(network['NetworkId'])
+        else : return
+        filtercondition = []
+        if filterOS:
+            filtercondition.append({'Name':'MacAddress.OSType','Operator':0,'Value':filterOS})
+        if filterdomain:
+            filtercondition.append({'Name':'MacAddress.HostWorkgroup','Operator':0,'Value':filterdomain})
+        precheckrule = [{'ThirdPartyInfoId':'HotfixRuleDetail'
+        ,'PreCheckRuleDetails':[{'ComparativeValue':str(hotfixcount),'CompareType':18,'PreCheckDataSource':1}
+        ,{'ComparativeValue':str(checkday),'CompareType':67,'PreCheckDataSource':2}]
+        ,'CustomFields':[]
+        ,'PreCheckRuleType':0
+        }]
+        Data = {'EnableTime':time.strftime('%Y/%m/%d'+' '+'%H:%M:%S')
+        ,'PreCheckRules':precheckrule
+        ,'FilterConditionalList':filtercondition
+        ,'NetworkIdList':netidlist
+        ,'Name':'hotfix on VBS from test'}
+        self.CreatePrecheckRule(Data=Data)
 
     def GetPrecheckRuleList(self)->list:
         Path = '/api/PreCheck/Query'

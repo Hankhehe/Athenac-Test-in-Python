@@ -108,7 +108,7 @@ class TestIPAM:
             ,f' verify fail, MAC is {lan2MACUpper_} from verify by LDAP')
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
-class TestAgent:
+class TestAutoRegist:
     def test_HostAgent(self)->None:
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.VBS.value,siteid=SiteID_)
@@ -117,7 +117,7 @@ class TestAgent:
         AthenacWebAPI_.DelMAC(mac=lan2_.mac,siteid=SiteID_)
         lan2_.SendARPReply(lan2_.Ip,Count=3,WaitSec=1)
         time.sleep(10)
-        AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.Login.value)
+        AthenacCoreAPI18002_.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.Login.value)
         MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
         if MACData :
             check.is_true(MACData['IsRegisteded'],f'this MAC {lan2_.mac} register is not true, when loging by used AD account')
@@ -128,18 +128,43 @@ class TestAgent:
         if MACData :
             check.is_false(MACData['IsRegisteded'],f'This MAC {lan2_.mac} register is not false, when IP start before 2 min')
             check.is_true(MACData['RegisterType'] == 0,f'this MAC {lan2_.mac} register type is not default, when ip start before 2 min' )
-        AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.UnblockCRequest.value)
+        AthenacCoreAPI18002_.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.UnblockCRequest.value)
         MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
         if MACData :
             check.is_true(MACData['IsRegisteded'],f'this MAC {lan2_.mac} register is not true,when login by used AD account after removed auto regist')
             check.is_true(MACData['RegisterType'] == 3,f'this MAC {lan2_.mac} register type is not AD,when login by used AD account after removed auto regist' )
-        AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='Local',remotetype=False,sendtype=SendHostAgentType.Login.value)
+        AthenacCoreAPI18002_.SendHostUserbyAgent(mac=lan2_.mac,domainname='Local',remotetype=False,sendtype=SendHostAgentType.Login.value)
         MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_)
         if MACData:
             check.is_false(MACData['IsRegisteded'],f'This MAC {lan2_.mac} register is not false, when loging by used local account')
             check.is_true(MACData['RegisterType'] == 0,f'This MAC {lan2_.mac} regist type is not default, when loging by used local account' )
         AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.Closed.value,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
+
+class TestPrecheck:
+    def test_HotfixKBbyVBSandPrecheckWhite(self)->None:
+        AthenacWebAPI_.ClearAllPrecheckRule()
+        AthenacWebAPI_.CreateUnInstallKBforPrecheckRule(siteid=SiteID_,KBNumber=123456)
+        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumber=123456)
+        AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=SiteID_)
+        lan2_.SendARPReply(IP=lan2_.Ip,Count=2,WaitSec=2)
+        check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Not recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS')
+        AthenacWebAPI_.SetPrecheckWhiteMAC(mac=lan2_.mac,white=True,siteid=SiteID_)
+        check.is_false(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS white')
+        AthenacWebAPI_.SetPrecheckWhiteMAC(mac=lan2_.mac,white=False,siteid=SiteID_)
+        AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+        check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Not recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS')
+        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumber=666666)
+        AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+        check.is_false(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Recived ARP Block at MAC {lan2_.Ip} from hotfix VBS')
+        AthenacWebAPI_.ClearAllPrecheckRule()
+    
+    def canceltest_HotfixbyVBS(self)->None:
+        AthenacWebAPI_.ClearAllPrecheckRule()
+        AthenacWebAPI_.CreateHotfixforPrecheckRule(siteid=SiteID_,hotfixcount=2,checkday=15)
+        checkdate = time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
+        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumber=123456)
+        AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
 
 class TestAbnormalDevice:
     def test_IPconflictTestCase(self)->None:
@@ -380,7 +405,7 @@ APIaccount_ = settingconfig_['APIaccount']
 APIpwd_ = settingconfig_['APIpwd']
 AthenacWebAPI_ = AthenacWebAPILibry(f'http://{serverIP_}:8000',APIaccount_,APIpwd_)
 AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{serverIP_}:18000',settingconfig_['probeID'],settingconfig_['daemonID'])
-AthenacCoreAPI18002 = AthenacCoreAPILibry(f'http://{serverIP_}:18002',settingconfig_['probeID'],settingconfig_['daemonID'])
+AthenacCoreAPI18002_ = AthenacCoreAPILibry(f'http://{serverIP_}:18002',settingconfig_['probeID'],settingconfig_['daemonID'])
 TestIPv4_ = settingconfig_['TestIPv4']
 TestIPv6_ = settingconfig_['TestIPv6']
 ProbeMAC_ = settingconfig_['ProbeMAC']

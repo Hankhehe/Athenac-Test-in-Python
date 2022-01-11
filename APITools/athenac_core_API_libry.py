@@ -56,10 +56,10 @@ class AthenacCoreAPILibry:
         Header = {'Content-type': 'application/json'}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)  
 
-    def SendHotfixbyVBS(self,mac:str,ip:str)->None:
+    def SendKBNumberbyVBS(self,mac:str,ip:str,KBnumber:int,checktime:str=time.strftime('%Y/%m/%d'+' '+'%H:%M:%S'))->None:
         mac = ':'.join(re.split(':|-',mac)).upper()
         Path = '/Vbs/Gethotfix'
-        Data = {'macs':mac,'Hotfixs':'Hotfix Test - KB123456','IPList':ip,'HotfixLastCheckTime':time.strftime('%Y/%m/%d'+' '+'%H:%M:%S')}
+        Data = {'macs':mac,'Hotfixs':f'Hotfix Test - KB{str(KBnumber)}','IPList':ip,'HotfixLastCheckTime':checktime}
         Header = {'Content-type':'application/x-www-form-urlencoded'}
         requests.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
     

@@ -7,15 +7,22 @@ from NetPacketTools.packet_listen import PacketListenFromFilter
 from NetPacketTools.packet_action_test import PacketActionTest
 
 
-WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
-# WebAPI.CreateUnInstallKB(siteid=2,filterOS='Windows',filterdomain='PIXIS')
-# WebAPI.ClearAllPrecheckRule()
-# WebAPI.DelPrecheckRule(precheckid=17)
+aaa =time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
 pass
-
-coreAPI = AthenacCoreAPILibry('http://192.168.21.180:18002','11','22')
+Ip = '172.18.255.11'
 Mac = '005056AEAA69'
 Domain = 'PIXIS'
+WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
+WebAPI.ClearAllPrecheckRule()
+WebAPI.CreateUnInstallKBforPrecheckRule(siteid=2,KBNumber=123456)
+WebAPI.CreateHotfixforPrecheckRule(siteid=2,hotfixcount=1,checkday=15)
+pass
+WebAPI.SetPrecheckWhiteMAC(mac=Mac,white=False,siteid=2)
+pass
+coreAPI = AthenacCoreAPILibry('http://192.168.21.180:18002','11','22')
+
+coreAPI.SendKBNumberbyVBS(mac=Mac,ip=Ip,KBnumber=123455)
+pass
 coreAPI.SendHostUserbyAgent(mac = Mac,domainname=Domain,remotetype=False,sendtype=SendHostAgentType.Login.value)
 coreAPI.SendHostUserbyAgent(mac = Mac,domainname=Domain,remotetype=False,sendtype=SendHostAgentType.UnblockCRequest.value)
 # coreAPI.SendHotfixbyvbs(mac='005056AEAA69',ip='192.168.25.11')
