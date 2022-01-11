@@ -679,7 +679,7 @@ class AthenacWebAPILibry:
             elif r.status_code == 401:
                 self.GetLoginToken()
 
-    def CreateUnInstallKBforPrecheckRule(self,siteid:int,KBNumber:int,filterOS:str=None,filterdomain:str=None)->None:
+    def CreateUnInstallKBforPrecheckRule(self,siteid:int,KBNumbers:list[int],filterOS:str=None,filterdomain:str=None)->None:
         netlist = self.GetNetworkListbySite(siteid=siteid)
         if netlist:
             netidlist = []
@@ -691,8 +691,11 @@ class AthenacWebAPILibry:
             filtercondition.append({'Name':'MacAddress.OSType','Operator':0,'Value':filterOS})
         if filterdomain:
             filtercondition.append({'Name':'MacAddress.HostWorkgroup','Operator':0,'Value':filterdomain})
+        KBNumCheck = []
+        for i in KBNumbers:
+            KBNumCheck.append({'ComparativeValue':'KB'+str(i),'CompareType':38,'PreCheckDataSource':0})
         precheckrule = [{'ThirdPartyInfoId':'Hotfix'
-        ,'PreCheckRuleDetails':[{'ComparativeValue':'KB'+str(KBNumber),'CompareType':38,'PreCheckDataSource':0}]
+        ,'PreCheckRuleDetails':KBNumCheck
         ,'CustomFields':[]
         ,'PreCheckRuleType':0
         }]
@@ -766,4 +769,30 @@ class AthenacWebAPILibry:
         for precheckdata in precheckdatas:
             self.DelPrecheckRule(precheckid=precheckdata['Id'])
 
+    def GetPrecheckDevice(self,precheckid:int)->list:
+        Path = f'/api/PreCheck/PreviewAgainstRules/{precheckid}'
+        Data = {'Take':0}
+        r,result = None,[]
+        for retriescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r:
+            r = json.loads(r.text)['Data']
+            for i in r :
+                result.append({'MacAddressId':i['MacAddressId']
+                ,'Mac':i['Mac']
+                ,'HostName':i['HostName']
+                ,'HostWorkgroup':i['HostWorkgroup']
+                ,'OSType':i['OSType']
+                ,'OSDetail':i['OSDetail']
+                ,'SiteId':i['SiteId']
+                ,'SiteName':i['SiteName']
+                ,'IsOnline':i['IsOnline']
+                })
+        return result
+        
 #endregion

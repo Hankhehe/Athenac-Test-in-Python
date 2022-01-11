@@ -6,28 +6,44 @@ from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,Send
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from NetPacketTools.packet_action_test import PacketActionTest
 
+def test_HotfixbyVBSOnHotfixCount()->None:
+    AthenacWebAPI_.ClearAllPrecheckRule()
+    AthenacWebAPI_.CreateHotfixforPrecheckRule(siteid=SiteID_,hotfixcount=0,checkday=15)
+    prechecklist = AthenacWebAPI_.GetPrecheckRuleList()
+    if prechecklist:
+        precheckid = prechecklist[0]['Id']
+    else:
+        check.is_true(False,'Create fail at Precheckrule') 
+        return
+    AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[123456])
+    AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+    illegaldevices =  AthenacWebAPI_.GetPrecheckDevice(precheckid=precheckid)
+    checkflag = False
+    for illegaldevice in illegaldevices:
+        if illegaldevice['Mac'] == lan2MACUpper_ and illegaldevice['SiteId'] == SiteID_:
+            checkflag = True
+    check.is_true(checkflag,f'The MAC {lan2_.mac} is not illegalDevice by Precheck on Hotfix Count')
+    AthenacWebAPI_.ClearAllPrecheckRule()
 
-aaa =time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
-pass
-Ip = '172.18.255.11'
-Mac = '005056AEAA69'
-Domain = 'PIXIS'
-WebAPI = AthenacWebAPILibry('http://192.168.21.180:8000','admin','admin')
-WebAPI.ClearAllPrecheckRule()
-WebAPI.CreateUnInstallKBforPrecheckRule(siteid=2,KBNumber=123456)
-WebAPI.CreateHotfixforPrecheckRule(siteid=2,hotfixcount=1,checkday=15)
-pass
-WebAPI.SetPrecheckWhiteMAC(mac=Mac,white=False,siteid=2)
-pass
-coreAPI = AthenacCoreAPILibry('http://192.168.21.180:18002','11','22')
-
-coreAPI.SendKBNumberbyVBS(mac=Mac,ip=Ip,KBnumber=123455)
-pass
-coreAPI.SendHostUserbyAgent(mac = Mac,domainname=Domain,remotetype=False,sendtype=SendHostAgentType.Login.value)
-coreAPI.SendHostUserbyAgent(mac = Mac,domainname=Domain,remotetype=False,sendtype=SendHostAgentType.UnblockCRequest.value)
-# coreAPI.SendHotfixbyvbs(mac='005056AEAA69',ip='192.168.25.11')
-pass
-
+def test_HotfixbyVBSOnCheckDate()->None:
+    AthenacWebAPI_.ClearAllPrecheckRule()
+    AthenacWebAPI_.CreateHotfixforPrecheckRule(siteid=SiteID_,hotfixcount=2,checkday=15)
+    prechecklist = AthenacWebAPI_.GetPrecheckRuleList()
+    if prechecklist:
+        precheckid = prechecklist[0]['Id']
+    else:
+        check.is_true(False,'Create fail at Precheckrule') 
+        return
+    checkdate = time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
+    AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[123456])
+    AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+    illegaldevices =  AthenacWebAPI_.GetPrecheckDevice(precheckid=precheckid)
+    checkflag = False
+    for illegaldevice in illegaldevices:
+        if illegaldevice['Mac'] == lan2MACUpper_ and illegaldevice['SiteId'] == SiteID_:
+            checkflag = True
+    check.is_true(checkflag,f'The MAC {lan2_.mac} is not illegalDevice by Precheck on Check Date')
+    AthenacWebAPI_.ClearAllPrecheckRule()
 
 
 #------------------------------------------------------------------------------------------------------------------------------------
@@ -38,7 +54,7 @@ APIaccount_ = settingconfig_['APIaccount']
 APIpwd_ = settingconfig_['APIpwd']
 AthenacWebAPI_ = AthenacWebAPILibry(f'http://{serverIP_}:8000',APIaccount_,APIpwd_)
 AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{serverIP_}:18000',settingconfig_['probeID'],settingconfig_['daemonID'])
-AthenacCoreAPI18002 = AthenacCoreAPILibry(f'http://{serverIP_}:18002',settingconfig_['probeID'],settingconfig_['daemonID'])
+AthenacCoreAPI18002_ = AthenacCoreAPILibry(f'http://{serverIP_}:18002',settingconfig_['probeID'],settingconfig_['daemonID'])
 TestIPv4_ = settingconfig_['TestIPv4']
 TestIPv6_ = settingconfig_['TestIPv6']
 ProbeMAC_ = settingconfig_['ProbeMAC']
@@ -52,9 +68,7 @@ lan2_ = PacketAction(settingconfig_['lan2'])
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 time.sleep(5)
 
-
-# AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.VBS.value,siteid=SiteID_)
-# AthenacWebAPI_.ClearAllDomainServerforAutoRegist(siteid=SiteID_)
-# AthenacWebAPI_.AddDomainServerforAutoRegist(domainname='PIXIS',ip='192.168.10.201',siteid=SiteID_)
-AthenacCoreAPI18002.SendHostUserbyAgent(mac=lan2_.mac,domainname='PIXIS',remotetype=False,sendtype=SendHostAgentType.Login.value)
-pass
+checkdate = time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
+AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[])
+# test_HotfixbyVBSOnHotfixCount()
+test_HotfixbyVBSOnCheckDate()

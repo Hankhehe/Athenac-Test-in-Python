@@ -141,11 +141,11 @@ class TestAutoRegist:
         AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.Closed.value,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
-class TestPrecheck:
+class TestPreCheck:
     def test_HotfixKBbyVBSandPrecheckWhite(self)->None:
         AthenacWebAPI_.ClearAllPrecheckRule()
-        AthenacWebAPI_.CreateUnInstallKBforPrecheckRule(siteid=SiteID_,KBNumber=123456)
-        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumber=123456)
+        AthenacWebAPI_.CreateUnInstallKBforPrecheckRule(siteid=SiteID_,KBNumbers=[123456])
+        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[123456])
         AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=SiteID_)
         lan2_.SendARPReply(IP=lan2_.Ip,Count=2,WaitSec=2)
         check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Not recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS')
@@ -154,17 +154,30 @@ class TestPrecheck:
         AthenacWebAPI_.SetPrecheckWhiteMAC(mac=lan2_.mac,white=False,siteid=SiteID_)
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
         check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Not recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS')
-        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumber=666666)
+        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[666666])
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
         check.is_false(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Recived ARP Block at MAC {lan2_.Ip} from hotfix VBS')
         AthenacWebAPI_.ClearAllPrecheckRule()
     
-    def canceltest_HotfixbyVBS(self)->None:
+    def test_HotfixbyVBS(self)->None:
         AthenacWebAPI_.ClearAllPrecheckRule()
-        AthenacWebAPI_.CreateHotfixforPrecheckRule(siteid=SiteID_,hotfixcount=2,checkday=15)
+        AthenacWebAPI_.CreateHotfixforPrecheckRule(siteid=SiteID_,hotfixcount=0,checkday=15)
+        prechecklist = AthenacWebAPI_.GetPrecheckRuleList()
+        if prechecklist:
+            precheckid = prechecklist[0]['Id']
+        else:
+            check.is_true(False,'Create fail at Precheckrule') 
+            return
         checkdate = time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
-        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumber=123456)
+        AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[123456],checktime=checkdate)
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+        illegaldevices =  AthenacWebAPI_.GetPrecheckDevice(precheckid=precheckid)
+        checkflag = False
+        for illegaldevice in illegaldevices:
+            if illegaldevice['Mac'] == lan2MACUpper_ and illegaldevice['SiteId'] == SiteID_:
+                checkflag = True
+        check.is_true(checkflag,f'The MAC {lan2_.mac} is not illegalDevice by Precheck on Check Date')
+        AthenacWebAPI_.ClearAllPrecheckRule()
 
 class TestAbnormalDevice:
     def test_IPconflictTestCase(self)->None:
