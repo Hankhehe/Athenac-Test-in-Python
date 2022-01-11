@@ -6,7 +6,7 @@ from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,SendHostAgentType,RegisterTypebyAutoRegist
 from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting
 
-class TestIPAM:
+class CTestIPAM:
     def test_IPBlockCase(self)->None:
             AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=True,siteid=SiteID_)
             time.sleep(10)
@@ -150,12 +150,15 @@ class TestPreCheck:
         lan2_.SendARPReply(IP=lan2_.Ip,Count=2,WaitSec=2)
         check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Not recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS')
         AthenacWebAPI_.SetPrecheckWhiteMAC(mac=lan2_.mac,white=True,siteid=SiteID_)
+        time.sleep(2)
         check.is_false(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS white')
         AthenacWebAPI_.SetPrecheckWhiteMAC(mac=lan2_.mac,white=False,siteid=SiteID_)
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+        time.sleep(2)
         check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Not recived ARP Block at MAC: {lan2_.Ip} from hotfix VBS')
         AthenacCoreAPI18002_.SendKBNumberbyVBS(mac=lan2_.mac,ip=lan2_.Ip,KBnumbers=[666666])
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=SiteID_)
+        time.sleep(2)
         check.is_false(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=ProbeMAC_),f'Recived ARP Block at MAC {lan2_.Ip} from hotfix VBS')
         AthenacWebAPI_.ClearAllPrecheckRule()
     
