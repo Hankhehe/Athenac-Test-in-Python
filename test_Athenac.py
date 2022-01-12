@@ -6,8 +6,8 @@ from APITools.athenac_core_API_libry import AthenacCoreAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,SendHostAgentType,RegisterTypebyAutoRegist
 from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting
 
-class CTestIPAM:
-    def test_IPBlockCase(self)->None:
+class TestIPAM:
+    def test_IPBlock(self)->None:
             AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=True,siteid=SiteID_)
             time.sleep(10)
             check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f' Not Receive ARP {lan2_.Ip}')
@@ -15,7 +15,7 @@ class CTestIPAM:
             check.is_false(lan2_.ARPBlockCheck(TestIPv4_,lan2_.gatewayIp,ProbeMAC_),f' Recive ARP Rqply {TestIPv4_} by Change IP')
             AthenacWebAPI_.BlockIPv4(ip=lan2_.Ip,block=False,siteid=SiteID_)
 
-    def test_MACblockTestCase(self)->None:
+    def test_MACblock(self)->None:
         AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=True,siteid=SiteID_)
         time.sleep(10)
         check.is_true(lan2_.ARPBlockCheck(lan2_.Ip,lan2_.gatewayIp,ProbeMAC_),f' Not Receive ARP {lan2_.Ip}')
@@ -25,7 +25,7 @@ class CTestIPAM:
         check.is_true(lan2_.NDPBlockCheck(TestIPv6_,lan2_.gatewatIpv6,ProbeMAC_),f' Not Receive NDP Adver {TestIPv6_}')
         AthenacWebAPI_.BlockMAC(mac=lan2MACUpper_,block=False,siteid=SiteID_)
 
-    def test_ProtectIPTestCase(self)->None:
+    def test_ProtectIP(self)->None:
         AthenacWebAPI_.DelIP(ip=TestIPv4_,siteid=SiteID_)
         AthenacWebAPI_.CreateProtectIP(ip=TestIPv4_,mac=lan1MACUpper_,siteid=SiteID_)
         check.is_false(lan1_.ARPBlockCheck(srcIP='0.0.0.0',dstIP=TestIPv4_,ProbeMAC=ProbeMAC_)
@@ -36,7 +36,7 @@ class CTestIPAM:
         ,f' Not Recive ARP {TestIPv4_} by lan2 MAC use {TestIPv4_}')
         AthenacWebAPI_.DelIP(ip=TestIPv4_,siteid=SiteID_)
 
-    def test_BindingIPTestCase(self)->None:
+    def test_BindingIP(self)->None:
         AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=SiteID_)
         time.sleep(5)
         AthenacWebAPI_.CreateBindingIP(ip=lan2_.Ip,siteid=SiteID_)
@@ -47,7 +47,7 @@ class CTestIPAM:
         check.is_false(lan1_.ARPBlockCheck(srcIP=TestIPv4_,dstIP=lan1_.gatewayIp,ProbeMAC=ProbeMAC_)
         ,f' Recive ARP {TestIPv4_} by lan1 MAC use {TestIPv4_}')
 
-    def test_UnauthMACBlockTestCase(self)->None:
+    def test_UnauthMACBlock(self)->None:
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=False,siteid=SiteID_)
         time.sleep(10)
@@ -64,7 +64,7 @@ class CTestIPAM:
         AthenacWebAPI_.AuthMAC(mac=lan2MACUpper_,auth=True,siteid=SiteID_)
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_)
 
-    def test_UnauthIPBlockTestCase(self)->None:
+    def test_UnauthIPBlock(self)->None:
         AthenacWebAPI_.SwitchIPSiteSaveMode(enable=True,siteid=SiteID_)
         AthenacWebAPI_.AuthIP(ip=lan2_.Ip,auth=False,siteid=SiteID_)
         time.sleep(10)
@@ -75,7 +75,7 @@ class CTestIPAM:
         ,f' Recive ARP Rqply {TestIPv4_} by Change IP')
         AthenacWebAPI_.SwitchIPSiteSaveMode(enable=False,siteid=SiteID_)
 
-    def test_UserApplyTestCase(self)->None:
+    def test_UserApply(self)->None:
         ADAccount= 'Hank'
         DBAccount = 'admin'
         LDAPaccount ='RAJ'
@@ -183,7 +183,7 @@ class TestPreCheck:
         AthenacWebAPI_.ClearAllPrecheckRule()
 
 class TestAbnormalDevice:
-    def test_IPconflictTestCase(self)->None:
+    def test_IPconflict(self)->None:
         checkv4 = False
         checkv6 = False
         for i in range(10):
@@ -200,7 +200,7 @@ class TestAbnormalDevice:
         check.is_true(checkv4,f' IPconflictTestCase {TestIPv4_}')
         check.is_true(checkv6,f' IPconflictTestCase {TestIPv6_}')
             
-    def test_OutofVLANTestCase(self)->None:
+    def test_OutofVLAN(self)->None:
         checkflag = False
         lan1_.SendARPReply('10.1.1.87')
         time.sleep(10)
@@ -209,7 +209,7 @@ class TestAbnormalDevice:
             if outofVLANDevice['Ip'] == '10.1.1.87' and outofVLANDevice['Mac'] == lan1MACUpper_: checkflag = True; break
         check.is_true(checkflag,' OutofVLANTestCase IP: 10.1.1.87')
 
-    def test_UnknowDHCPTestCase(self)->None:
+    def test_UnknowDHCP(self)->None:
         lan1_.SendDHCPv4Offer()
         lan1_.SendDHCPv6Advertise()
         lan1_.SendRA()
@@ -226,7 +226,7 @@ class TestAbnormalDevice:
         check.is_true(checkDHCPv6,' UnknowDHCPTestCase DHCPv6')
         check.is_true(checkSLAAC,' UnknowDHCPTestCase SLAAC')
 
-    def test_BroadcastTesttCase(self)->None:
+    def test_Broadcast(self)->None:
         checkfalg = False
         lan1_.SendARPReply(lan1_.Ip,1000)
         time.sleep(120)
@@ -235,7 +235,7 @@ class TestAbnormalDevice:
             if borDevice['Ip'] == lan1_.Ip and borDevice['Mac'] == lan1MACUpper_: checkfalg = True; break
         check.is_true(checkfalg,f' BrocastcastTest {lan1_.Ip}')
  
-    def test_MultcastTestCase(self)->None:
+    def test_Multcast(self)->None:
         checkflag = False
         lan1_.SendNA(lan1_.globalIp,1000)
         time.sleep(120)
@@ -245,7 +245,7 @@ class TestAbnormalDevice:
         check.is_true(checkflag,f' MultcastTestCase {lan1_.globalIp}')
 
 class TestRadius:
-    def test_Radius8021XTestCase(self)->None:
+    def test_Radius8021X(self)->None:
         radiusset = RadiusSetting(SiteId=SiteID_,EnableDynamicVLAN=False)
         radiusclientset = RadiusClient(SiteId=SiteID_,RadiusAVPId=AuthAVPID_)
         AthenacWebAPI_.UpdateRadiusSetting(radiusset)
@@ -268,7 +268,7 @@ class TestRadius:
         radiusset.EnableRadius = False
         AthenacWebAPI_.UpdateRadiusSetting(radiusset)
 
-    def test_RadiusDynamicVLANTestCase(self)->None:
+    def test_RadiusDynamicVLAN(self)->None:
         dynamicset = RadiusSetting(SiteId=SiteID_)
         radiusclientset = RadiusClient(SiteId=SiteID_,RadiusAVPId=DynamicAVPID_)
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset)
@@ -302,7 +302,7 @@ class TestRadius:
         dynamicset.EnableRadius = False
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset)
 
-    def test_RadiusCoATestCasebyQuar(self)->None:
+    def test_RadiusCoAbyQuar(self)->None:
         dynamicset = RadiusSetting(SiteId=SiteID_)
         radiusclientset = RadiusClient(SiteId=SiteID_,RadiusAVPId=DynamicAVPID_)
         dynamicset.SiteVerifyModule = SiteVerifyModule.EnableDbVerify.value
