@@ -1,3 +1,7 @@
+from selectors import SelectorKey
+import time
+
+
 class RadiusSetting:
     def __init__(self,SiteId:int,DeviceDivideType:int=2,EnableDynamicVLAN:bool=True,EnableExternalAutoQuarantine:bool=False
     ,EnableExternalOnlineVerification:bool=False,EnableInternalAutoQuarantine:bool=False,EnableInternalOnlineVerification:bool=False
@@ -49,5 +53,19 @@ class BlockMessageSetting:
                 ,'Title':'Automation test account'
                 ,'Content':'Automation Test text'
                 }
-        
+
+class HostAgentClientInfo:
+    def __init__(self,macs:list[str],hostName:str,domainname:str,ostype:str,osdesc:str,logonusers:list[dict]
+    ,windowshotfixlastchecktime:str =time.strftime('%Y-%m-%d'+'T'+'%H:%M:%S'),pendinghotfix:list[str]=[],localadminaccount:list[str] =[],sharefolder:list[str]=[]) -> None:
+        self.hostName = hostName 
+        self.maCs = macs
+        self.domainName = domainname
+        self.logonusers = logonusers
+        self.osType = ostype
+        self.osDesc = osdesc
+        self.shareFolder = sharefolder
+        self.pendingHotFix = pendinghotfix
+        self.windowsHotFixLastCheckTime = windowshotfixlastchecktime
+        self.localAdminAccount = localadminaccount
+        self.timestamp = time.strftime('%Y-%m-%d'+'T'+'%H:%M:%S')
 

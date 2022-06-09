@@ -1,11 +1,11 @@
-import user_config
+import time
 from web_controller import WebController
+from file_operator import ImportDataByFile
 
+acction = WebController('http://192.168.28.189:8000')
+acction.LogintoAtheNAC('admin','admin')
+time.sleep(10)
+urls = acction.GetHrefbyCorrentPage()
 
-config = user_config.LoginData('http://192.168.21.180:8000','1','1')
-acction = WebController(config)
-logPath='C:\\Users\\Public\\log.txt'
-urlfile = 'C:\\Users\\Public\\url.txt'
-acction.Login()
-#acction.GetUrl(urlfile)
-acction.CheckUrlAuth(logPath)
+for i in urls :
+    acction.GotoUrl(i)
