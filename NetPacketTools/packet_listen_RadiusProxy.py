@@ -1,14 +1,15 @@
 import socket,threading,hashlib,hmac
-from scapy.all import get_working_if,get_working_ifaces,sniff,srp,conf,Ether,IP,UDP,RadiusAttr_Framed_Protocol
+from scapy.all import get_working_if,get_working_ifaces,sniff,srp,sendp,conf,Ether,IP,UDP,RadiusAttr_Framed_Protocol
  
 class PacketListenRadiusProxy:
-    def __init__(self,RadiusClientIP:str,RadiusServerIP:str,RadiusPort:int,secrectkey:bytes,NicName:str=get_working_if().name) -> None:
+    def __init__(self,RadiusClientIP:str,RadiusServerIP:str,gatewayMAC:str,RadiusPort:int,secrectkey:bytes,NicName:str=get_working_if().name) -> None:
         conf.checkIPaddr = False
         self.nicName = NicName
         self.nic = [x for x in get_working_ifaces() if NicName == x.name][0]
         self.Ip= self.nic.ip
         self.mac = self.nic.mac
         self.secrectkey = secrectkey
+        self.GatewayMAC = gatewayMAC
         self.RadiusClientIP = RadiusClientIP
         self.RadiusServerIP = RadiusServerIP
         self.RadiusPort = RadiusPort
@@ -37,7 +38,7 @@ class PacketListenRadiusProxy:
         else:pass
     
     def ForwardRadiusPacke(self,Packet,dip:str,srcport:int,dstport:int):
-        RadiusReq =Ether(src =self.mac,dst='00:00:0c:9f:f0:11')\
+        RadiusReq =Ether(src =self.mac,dst=self.GatewayMAC)\
          /IP(src=self.Ip,dst=dip)\
             /UDP(sport =srcport,dport=dstport)\
                /Packet
@@ -55,11 +56,11 @@ class PacketListenRadiusProxy:
         Packet.len = Packet.len + 6 #封包長度需增加 PPP 的 AVP 長度
         Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())
         
-        RadiusReq =Ether(src =self.mac,dst='00:00:0c:9f:f0:11')\
+        RadiusReq =Ether(src =self.mac,dst=self.GatewayMAC)\
          /IP(src=self.Ip,dst=dip)\
             /UDP(sport =srcport,dport=dstport)\
                 /Packet
-        srp(RadiusReq,timeout=5,iface=self.nicName)
+        sendp(RadiusReq,iface=self.nicName)
     
     def SendRadiufsAcceptAndReplaceIncMessandAuth(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
         Packet.authenticator = self.radiusrequestauthcode
@@ -69,11 +70,11 @@ class PacketListenRadiusProxy:
         Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex('0'*32)
         Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex(hmac.new(secrectkey,bytes(Packet),hashlib.md5).hexdigest())
         Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())
-        RadiusReq =Ether(src =self.mac,dst='00:00:0c:9f:f0:11')\
+        RadiusReq =Ether(src =self.mac,dst=self.GatewayMAC)\
          /IP(src=self.Ip,dst=dip)\
             /UDP(sport =srcport,dport=dstport)\
                 /Packet
-        srp(RadiusReq,timeout=5,iface=self.nicName)
+        sendp(RadiusReq,iface=self.nicName)
 
     def CreateUDPClient(self):
         localIP     = "0.0.0.0"
