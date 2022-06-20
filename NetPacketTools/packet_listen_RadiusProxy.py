@@ -1,13 +1,14 @@
-import socket,threading,hashlib
+import socket,threading,hashlib,hmac
 from scapy.all import get_working_if,get_working_ifaces,sniff,srp,conf,Ether,IP,UDP
  
 class PacketListenRadiusProxy:
-    def __init__(self,RadiusClientIP:str,RadiusServerIP:str,RadiusPort:int,NicName:str=get_working_if().name) -> None:
+    def __init__(self,RadiusClientIP:str,RadiusServerIP:str,RadiusPort:int,secrectkey:bytes,NicName:str=get_working_if().name) -> None:
         conf.checkIPaddr = False
         self.nicName = NicName
         self.nic = [x for x in get_working_ifaces() if NicName == x.name][0]
         self.Ip= self.nic.ip
         self.mac = self.nic.mac
+        self.secrectkey = secrectkey
         self.RadiusClientIP = RadiusClientIP
         self.RadiusServerIP = RadiusServerIP
         self.RadiusPort = RadiusPort
@@ -29,7 +30,8 @@ class PacketListenRadiusProxy:
             self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusServerIP,srcport =Packet['UDP'].sport,dstport = self.RadiusPort)
         elif Packet['UDP'].sport == self.RadiusPort:
             if Packet['UDP'].code == 2:
-                self.SendRadiusAcceptAndReplace(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
+                # self.SendRadiusAcceptAndReplace(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
+                self.SendRadiufsAcceptAndReplaceIncMessandAuth(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
             else:
                 self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
         else:pass
@@ -41,16 +43,28 @@ class PacketListenRadiusProxy:
                /Packet
         srp(RadiusReq,timeout=5,iface=self.nicName)
     
-    def SendRadiusAcceptAndReplace(self,Packet,dip:str,srcport:int,dstport:int):
+    def SendRadiusAcceptAndReplace(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
         del Packet.attributes[13::]
         Packet.attributes[1].value = b'12'
         Packet.authenticator = self.radiusrequestauthcode
         Packet.len = Packet.len - 18 
+        Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())
         RadiusReq =Ether(src =self.mac,dst='00:00:0c:9f:f0:11')\
          /IP(src=self.Ip,dst=dip)\
             /UDP(sport =srcport,dport=dstport)\
                 /Packet
-        RadiusReq['Radius'].authenticator =bytes.fromhex(str(hashlib.md5(bytes(RadiusReq['Radius'])+b'pixis').hexdigest()))
+        srp(RadiusReq,timeout=5,iface=self.nicName)
+    
+    def SendRadiufsAcceptAndReplaceIncMessandAuth(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
+        Packet.authenticator = self.radiusrequestauthcode
+        Packet.attributes[1].value = b'12'
+        Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex('0'*32)
+        Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex(hmac.new(secrectkey,bytes(Packet),hashlib.md5).hexdigest())
+        Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())
+        RadiusReq =Ether(src =self.mac,dst='00:00:0c:9f:f0:11')\
+         /IP(src=self.Ip,dst=dip)\
+            /UDP(sport =srcport,dport=dstport)\
+                /Packet
         srp(RadiusReq,timeout=5,iface=self.nicName)
 
     def CreateUDPClient(self):
