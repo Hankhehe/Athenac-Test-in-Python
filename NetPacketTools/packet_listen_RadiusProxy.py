@@ -1,5 +1,5 @@
 import socket,threading,hashlib,hmac
-from scapy.all import get_working_if,get_working_ifaces,sniff,srp,sendp,conf,Ether,IP,UDP,RadiusAttr_Framed_Protocol
+from scapy.all import get_working_if,get_working_ifaces,sniff,srp,sendp,conf,Ether,IP,UDP,RadiusAttribute,RadiusAttr_EAP_Message,Radius,RadiusAttr_Message_Authenticator
  
 class PacketListenRadiusProxy:
     def __init__(self,RadiusClientIP:str,RadiusServerIP:str,gatewayMAC:str,RadiusPort:int,secrectkey:bytes,NicName:str=get_working_if().name) -> None:
@@ -29,10 +29,11 @@ class PacketListenRadiusProxy:
         if Packet['UDP'].dport== self.RadiusPort :
             self.radiusrequestauthcode =  bytes(Packet.authenticator)
             self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusServerIP,srcport =Packet['UDP'].sport,dstport = self.RadiusPort)
-        elif Packet['UDP'].sport == self.RadiusPort:
-            if Packet['UDP'].code == 2:
-                # self.SendRadiusAcceptAndReplace(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
-                self.SendRadiufsAcceptAndReplaceIncMessandAuth(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
+        elif Packet['UDP'].sport == self.RadiusPort :
+            if Packet['UDP'].code == 2 :
+                self.SendAcceptAndReplaceVLANID(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
+            elif Packet['UDP'].code == 3 :
+                self.SendReject(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
             else:
                 self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
         else:pass
@@ -44,28 +45,37 @@ class PacketListenRadiusProxy:
                /Packet
         srp(RadiusReq,timeout=5,iface=self.nicName)
     
-    def SendRadiusAcceptAndReplace(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
-        Packet.authenticator = self.radiusrequestauthcode
-        for i in range(len(Packet.attributes)): #如果判斷到 AVPs 裡有 Message-Auth AVP 就刪除
-            print(Packet.attributes[i])
-            if Packet.attributes[i].type == 80:
-                del Packet.attributes[i] 
-                Packet.len = Packet.len - 18 #封包長度須減掉 Message-auth 的 AVP 長度
-        # Packet.attributes[1].value = b'12' #如有需要改 VLAN 時才需要這個 Code
-        # Packet.attributes.append(RadiusAttr_Framed_Protocol(type=7,value=1)) #增加 PPP AVP 在最後面
-        # Packet.len = Packet.len + 6 #封包長度需增加 PPP 的 AVP 長度
-        Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())
-        RadiusReq =Ether(src =self.mac,dst=self.GatewayMAC)\
+    def SendReject(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
+        Packet['RadiusAttr_EAP_Message'].value.code = 4
+        RadiusPaylod = Radius(code=3,id=Packet.id,authenticator=self.radiusrequestauthcode
+        ,attributes=[RadiusAttr_EAP_Message(value=Packet['RadiusAttr_EAP_Message'].value)
+                ,RadiusAttr_Message_Authenticator(type =80,value=bytes.fromhex('0'*32))])
+
+        # 額外加入 VLAN ID 的 Attribute    
+        # RadiusPaylod.attributes.append(RadiusAttribute(type=65,value=bytes.fromhex('00000006')))
+        # RadiusPaylod.attributes.append(RadiusAttribute(type=81,value=b'83'))
+        # RadiusPaylod.attributes.append(RadiusAttribute(type=64,value=bytes.fromhex('0000000d')))
+
+        RadiusPaylod['RadiusAttr_Message_Authenticator'].value =bytes.fromhex(hmac.new(secrectkey,bytes(RadiusPaylod),hashlib.md5).hexdigest())
+        RadiusPaylod.authenticator = bytes.fromhex(hashlib.md5(bytes(RadiusPaylod)+secrectkey).hexdigest())
+        RadiusResponse =Ether(src =self.mac,dst=self.GatewayMAC)\
          /IP(src=self.Ip,dst=dip)\
             /UDP(sport =srcport,dport=dstport)\
-                /Packet
-        sendp(RadiusReq,iface=self.nicName)
-    
-    def SendRadiufsAcceptAndReplaceIncMessandAuth(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
+                /RadiusPaylod
+        sendp(RadiusResponse,iface=self.nicName)
+
+    def SendAcceptAndReplaceVLANID(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
+        Packet.len = None
+        if Packet.code == 3 :
+            Packet.code = 2
+            Packet['RadiusAttr_EAP_Message'].value.code = 3
+        
+        #新增 VLAN ID 相關的 Attributes
+        Packet.attributes.append(RadiusAttribute(type=65,value=bytes.fromhex('00000006')))
+        Packet.attributes.append(RadiusAttribute(type=81,value=b'12'))
+        Packet.attributes.append(RadiusAttribute(type=64,value=bytes.fromhex('0000000d')))
+
         Packet.authenticator = self.radiusrequestauthcode
-        Packet.attributes[1].value = b'12'
-        # Packet.attributes.append(RadiusAttr_Framed_Protocol(type=7,value=1)) #增加 PPP AVP 在最後面
-        # Packet.len = Packet.len + 6 #封包長度需增加 PPP 的 AVP 長度
         Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex('0'*32)
         Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex(hmac.new(secrectkey,bytes(Packet),hashlib.md5).hexdigest())
         Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())

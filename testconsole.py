@@ -13,8 +13,8 @@ from CreateData import iprelated,macrelated
 
 #region memo
 #測試 Radius Proxy
-listen1 = PacketListenRadiusProxy(RadiusClientIP = '192.168.10.235',RadiusServerIP= '192.168.10.201'
-,gatewayMAC='00:00:0c:9f:f0:11',RadiusPort= 1812,NicName= 'Ethernet1',secrectkey=b'pixis')
+listen1 = PacketListenRadiusProxy(RadiusClientIP = '10.18.64.254',RadiusServerIP= '10.18.65.60'
+,gatewayMAC='b4:99:ba:3c:e1:00',RadiusPort= 1812,NicName= '乙太網路',secrectkey=b'pixis')
 listen1.Sniffer('udp and port 1812',60*60*24)
 pass
 
