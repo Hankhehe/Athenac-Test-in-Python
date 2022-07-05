@@ -2,7 +2,7 @@ import socket,threading,hashlib,hmac
 from scapy.all import get_working_if,get_working_ifaces,sniff,srp,sendp,conf,Ether,IP,UDP,RadiusAttribute,RadiusAttr_EAP_Message,Radius,RadiusAttr_Message_Authenticator
  
 class PacketListenRadiusProxy:
-    def __init__(self,RadiusClientIP:str,RadiusServerIP:str,gatewayMAC:str,RadiusPort:int,secrectkey:bytes,NicName:str=get_working_if().name) -> None:
+    def __init__(self,RadiusServerIP:str,gatewayMAC:str,RadiusPort:int,secrectkey:bytes,NicName:str=get_working_if().name) -> None:
         conf.checkIPaddr = False
         self.nicName = NicName
         self.nic = [x for x in get_working_ifaces() if NicName == x.name][0]
@@ -10,7 +10,7 @@ class PacketListenRadiusProxy:
         self.mac = self.nic.mac
         self.secrectkey = secrectkey
         self.GatewayMAC = gatewayMAC
-        self.RadiusClientIP = RadiusClientIP
+        self.RadiusClientIP = ''
         self.RadiusServerIP = RadiusServerIP
         self.RadiusPort = RadiusPort
         self.radiusrequestauthcode = bytes(00*16)
@@ -22,20 +22,22 @@ class PacketListenRadiusProxy:
         sniff(filter = f'(ether dst {self.mac} or ether dst ff:ff:ff:ff:ff:ff) and {Filter}', store = 0,prn=self.CheckPacketType ,timeout =time ,iface=self.nicName)
 
     def CheckPacketType(self,Packet):
-        if UDP in Packet: self.CheckUDPPacket(Packet['UDP'])
+        if UDP in Packet:
+            if Packet['Radius'].code == 1:
+                self.RadiusClientIP = Packet['IP'].src
+            self.CheckUDPPacket(Packet['UDP'])
         else: pass
 
     def CheckUDPPacket(self,Packet):
-        if Packet['UDP'].dport== self.RadiusPort :
+        if Packet['Radius'].code == 1 :
             self.radiusrequestauthcode =  bytes(Packet.authenticator)
             self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusServerIP,srcport =Packet['UDP'].sport,dstport = self.RadiusPort)
-        elif Packet['UDP'].sport == self.RadiusPort :
-            if Packet['UDP'].code == 2 :
-                self.SendAcceptAndReplaceVLANID(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
-            elif Packet['UDP'].code == 3 :
-                self.SendReject(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
-            else:
-                self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
+        elif Packet['Radius'].code == 2 :
+            self.SendAcceptAndReplaceVLANID(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
+        elif Packet['Radius'].code == 3 :
+            self.SendReject(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
+        elif Packet['Radius'].code == 11 :
+            self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
         else:pass
     
     def ForwardRadiusPacke(self,Packet,dip:str,srcport:int,dstport:int):
@@ -72,7 +74,7 @@ class PacketListenRadiusProxy:
         
         #新增 VLAN ID 相關的 Attributes
         Packet.attributes.append(RadiusAttribute(type=65,value=bytes.fromhex('00000006')))
-        Packet.attributes.append(RadiusAttribute(type=81,value=b'12'))
+        Packet.attributes.append(RadiusAttribute(type=81,value=b'22'))
         Packet.attributes.append(RadiusAttribute(type=64,value=bytes.fromhex('0000000d')))
 
         Packet.authenticator = self.radiusrequestauthcode
