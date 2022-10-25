@@ -1,0 +1,59 @@
+{
+    "Data": [
+        {
+            "timestamp": "2022-10-25T10:25:19.695953",
+            "sid": 2515,
+            "revision": 13,
+            "priority": 1,
+            "message": "WEB-MISC PCT Client_Hello overflow attempt",
+            "source": "192.168.11.9:58051",
+            "destination": "13.35.153.186:443",
+            "protocol": "TCP",
+            "classtype": "Attempted Administrator Privilege Gain"
+        },
+        {
+            "timestamp": "2022-10-25T10:26:35.957882",
+            "sid": 2515,
+            "revision": 13,
+            "priority": 1,
+            "message": "WEB-MISC PCT Client_Hello overflow attempt",
+            "source": "192.168.11.19:55170",
+            "destination": "203.74.95.27:443",
+            "protocol": "TCP",
+            "classtype": "Attempted Administrator Privilege Gain"
+        },
+        {
+            "timestamp": "2022-10-25T10:27:48.897367",
+            "sid": 1807,
+            "revision": 10,
+            "priority": 1,
+            "message": "WEB-MISC Chunked-Encoding transfer attempt",
+            "source": "192.168.11.6:37298",
+            "destination": "31.13.71.175:80",
+            "protocol": "TCP",
+            "classtype": "Web Application Attack"
+        },
+        {
+            "timestamp": "2022-10-25T10:29:29.211154",
+            "sid": 2657,
+            "revision": 8,
+            "priority": 1,
+            "message": "WEB-MISC SSLv2 Client_Hello with pad Challenge Length overflow attempt",
+            "source": "192.168.11.6:32892",
+            "destination": "31.13.87.175:443",
+            "protocol": "TCP",
+            "classtype": "Attempted Administrator Privilege Gain"
+        },
+        {
+            "timestamp": "2022-10-25T10:29:46.250687",
+            "sid": 2515,
+            "revision": 13,
+            "priority": 1,
+            "message": "WEB-MISC PCT Client_Hello overflow attempt",
+            "source": "192.168.11.253:2379",
+            "destination": "192.168.10.202:443",
+            "protocol": "TCP",
+            "classtype": "Attempted Administrator Privilege Gain"
+        }
+    ]
+}
