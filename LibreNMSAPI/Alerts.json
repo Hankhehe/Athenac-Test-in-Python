@@ -1,0 +1,45 @@
+{
+    "status": "ok",
+    "alerts": [
+        {
+            "hostname": "192.168.21.237",
+            "id": 77,
+            "device_id": 6,
+            "rule_id": 5,
+            "state": 1,
+            "alerted": 0,
+            "open": 1,
+            "note": "",
+            "timestamp": "2022-11-01 17:55:18",
+            "info": "",
+            "severity": "critical"
+        },
+        {
+            "hostname": "192.168.10.249",
+            "id": 301,
+            "device_id": 12,
+            "rule_id": 14,
+            "state": 1,
+            "alerted": 1,
+            "open": 0,
+            "note": "",
+            "timestamp": "2022-10-11 14:35:13",
+            "info": "",
+            "severity": "warning"
+        },
+        {
+            "hostname": "192.168.10.249",
+            "id": 302,
+            "device_id": 12,
+            "rule_id": 15,
+            "state": 1,
+            "alerted": 1,
+            "open": 0,
+            "note": "",
+            "timestamp": "2022-10-11 14:35:13",
+            "info": "",
+            "severity": "warning"
+        }
+    ],
+    "count": 3
+}
