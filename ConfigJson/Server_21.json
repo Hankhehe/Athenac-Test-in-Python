@@ -1,0 +1,16 @@
+{
+    "serverIP":"192.168.21.180",
+    "APIaccount":"admin",
+    "APIpwd":"admin",
+    "probeID":"10925416137",
+    "daemonID":"6922375401",
+    "ProbeMAC":"00:aa:ff:ae:09:cc",
+    "TestIPv4":"192.168.21.187",
+    "TestIPv6":"2001:b030:2133:815::187",
+    "lan1":"Ethernet1",
+    "lan2":"Ethernet2",
+    "VLANIDMapping":17,
+    "SiteId":1,
+    "DynamicAVPID":1,
+    "AuthAVPID":2
+}

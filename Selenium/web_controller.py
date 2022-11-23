@@ -28,3 +28,17 @@ class WebController:
         for i in a:
             result.append(i.get_attribute('href'))
         return result
+    
+    def AddRouleGroup(self,count:int) -> None:
+        for i in range(1,count+1):
+            self.GotoUrl('http://192.168.21.180:8000/authorization/auth-group')
+            addRolebtn = self._driver.find_element(
+                By.XPATH,'/html/body/div[1]/div/div/div[2]/section/div/div[2]/div/div[1]/div')
+            addRolebtn.click()
+            roleNametext = self._driver.find_element(
+                By.XPATH, '/html/body/div[5]/div[2]/div/div[1]/div/div/div[2]/div/form/div[1]/label[2]/div/input')
+            roleNametext.clear()
+            roleNametext.send_keys(str(i))
+            savebtn = self._driver.find_element(
+                By.XPATH,'/html/body/div[5]/div[2]/div/div[1]/div/div/div[2]/div/form/div[3]/button[1]')
+            savebtn.click()

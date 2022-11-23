@@ -195,6 +195,49 @@ class TestAutoRegist:
         CheckAuth(authtype=3,auth=False) #檢查 lan2 的狀態是否為未授權且授權型態是否為 0
         AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.Closed.value,siteid=SiteID_) #關閉 AD 自動授權
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_) #關閉 Site MAC 安全模式
+    
+    def test_Packet(self) -> None:
+        '''發送工作群組封包資料給 Server 測試 Server 功能'''
+        def CheckAuth(authtype:int,auth:bool) -> None:
+            '''type 1 = it join domain and AD is loging
+            type 2 = is not join domain and local account login'''
+            messagetype = ''
+            if authtype == 1: messagetype ='join domain and AD is loging'
+            elif authtype == 2 : messagetype ='is not join domain and local account login'
+            MACData = AthenacWebAPI_.GetMACDetail(lan2_.mac,SiteId=SiteID_) #取得 lan2 MAC 的相關資訊
+            if not MACData:
+                #當無法透過 API 取得 lan2 MAC 資料時就跳錯
+                check.is_true(False,f'can not queried {lan2MACUpper_} Detail while {lan2MACUpper_} is {messagetype}')
+            elif auth :
+                #檢查 lan2 MAC 的授權狀態是否為 True
+                check.is_true(MACData['IsRegisteded'],f'{lan2MACUpper_} registered status is unauthened while {lan2MACUpper_} is {messagetype}')
+                #檢查 lan2 MAC 的授權型態是否為網域自動授權(此型態會讓 MAC 變藍色)
+                check.is_true(MACData['RegisterType'] == 3,f'{lan2MACUpper_} registered type is not AD while {lan2MACUpper_} is {messagetype}' )
+            elif not auth:
+                check.is_false(MACData['IsRegisteded'],f'{lan2MACUpper_} registeerd status is authened while {lan2MACUpper_} is {messagetype}')
+                #檢查 lan2 MAC 的授權型態是否為預設值
+                check.is_true(MACData['RegisterType'] == 0,f'{lan2MACUpper_} registered type is not default while {lan2MACUpper_} is {messagetype}')
+            else: check.is_true(False,'Unknow error')
+
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=SiteID_) #開啟 Site MAC 安全模式
+        AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.Packet.value,siteid=SiteID_) #啟用 AD 自動授權封包驗證
+        AthenacWebAPI_.ClearAllDomainServerforAutoRegist(siteid=SiteID_) #清除所有自動授權內的 AD Server IP 資訊，確保環境乾淨
+        AthenacWebAPI_.AddDomainServerforAutoRegist(domainname='PIXIS',ip='192.168.10.201',siteid=SiteID_) #新增 PIXIS 公司的 AD IP 和網域名稱
+        AthenacWebAPI_.DelMAC(mac=lan2_.mac,siteid=SiteID_) #刪除 lan2 MAC，刪除該 MAC 所有的網域群組等資訊
+        lan2_.SendARPReply(lan2_.Ip,Count=10,WaitSec=1) #lan2 使用 lan2 IP 發送 ARP 確保主機列表有上線
+
+        #透過 lan2 發送 PIXIS 工作群組名稱給 Server，確認是否會被自動授權
+        lan2_.SendNBNSResponse(name='PIXIS',workgroup=True)
+        time.sleep(50)
+        CheckAuth(authtype=1,auth=True) #檢查 lan2 的狀態是否為授權且授權型態是否為 3
+
+        #透過 lan2 發送 WORKGROUP 工作群組名稱給 Server，確認是否會被自動授權
+        lan2_.SendNBNSResponse(name='WORKGROUP',workgroup=True)
+        time.sleep(50)
+        CheckAuth(authtype=2,auth=False) #檢查 lan2 的狀態是否為未授權且授權型態是否為 0
+
+        AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.Closed.value,siteid=SiteID_) #關閉 AD 自動授權
+        AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=SiteID_) #關閉 Site MAC 安全模式
 
 class TestPreCheck:
     def test_HotfixKBbyVBSandPrecheckWhite(self)->None:
@@ -311,7 +354,9 @@ class TestAbnormalDevice:
         '''未知的 IP 派發來源測試'''
         lan1_.SendDHCPv4Offer() #使用 lan1 的 IP 觸發未知的 DHCPv4
         lan1_.SendDHCPv6Advertise() #使用 lan1 的 linklocal IP 觸發 DHCPv6
-        lan1_.SendRA() #使用 lan1 的 global IP 觸發 SLAAC Stateless 
+        # lan1_.SendRA(flagM=0,flagO=1) #使用 lan1 的 global IP 觸發 SLAAC Stateless 
+        # lan1_.SendRA(flagM=1,flagO=1)  #使用 lan1 的 global IP 觸發 SLAAC Stateful 
+        lan1_.SendRA()
         time.sleep(10)
         unknowDHCPList = AthenacWebAPI_.GetUnknowDHCPList() #透過 API 取得未知的 IP 派發來源清單資訊
         checkDHCPv4 = False
@@ -481,7 +526,7 @@ class TestRadius:
         AthenacWebAPI_.UpdateRadiusSetting(dynamicset) #關閉動態 VLAN 以及內外部隔離 VLAN 且關閉 802.1X 功能
 
 #region 依照參數設定環境
-with open('settingconfig_Hank.json') as f:
+with open('ConfigJson/Server_ReleaseTest.json') as f:
     settingconfig_ = json.loads(f.read())
 serverIP_ = settingconfig_['serverIP']
 APIaccount_ = settingconfig_['APIaccount']

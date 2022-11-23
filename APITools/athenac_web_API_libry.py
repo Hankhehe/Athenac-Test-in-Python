@@ -1,4 +1,4 @@
-import requests,json,re,time
+import requests,json,re,time,ipaddress
 from urllib import parse
 from CreateData import iprelated,macrelated
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient,BlockMessageSetting
@@ -230,7 +230,7 @@ class AthenacWebAPILibry:
                 return {'MacAddressId':i['MacAddressId']
                 ,'HostName':i['HostName']
                 ,'HostWorkgroup':i['HostWorkgroup']
-                ,'IsRegisteded':i['IsRegisteded']
+                ,'IsRegisteded':i['IsRegistered']
                 ,'RegisterType':i['RegisterType']
                 ,'RegisterUserId':i['RegisterUserId']
                 ,'RegisterUserName':i['RegisterUserName']
@@ -345,7 +345,7 @@ class AthenacWebAPILibry:
                 ,'IP':i['IpInfo']['Ip']
                 ,'IPIsregisteded':i['IpInfo']['IsRegisted']
                 ,'MAC':i['MacInfo']['Mac']
-                ,'MacIsRegisteded':i['MacInfo']['IsRegisteded']
+                ,'MacIsRegisteded':i['MacInfo']['IsRegistered']
                 ,'HostName':i['MacInfo']['HostName']
                 })
         return result
@@ -733,6 +733,138 @@ class AthenacWebAPILibry:
                 ,'IpDualStackRule':i['IpDualStackRule']})
         return result 
 
+    def GetIPRangeInfoByName(self,RangeName:str) -> int | None:
+        Path ='/api/IpRanges/V4'
+        r = None
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+            else: return
+        if r :
+            r = json.loads(r.text)
+            for i in r:
+                if i['Name'] == RangeName:
+                    return i['Id']
+
+    def GetNetworkInfoByName(self,NetworkName:str)-> int | None :
+        r = None
+        Path = '/api/Networks/Query'
+        Data = {'take':0}
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r :
+                if i['NetworkName'] == NetworkName :
+                    return i['NetworkId']
+
+    def AddNetwork(self,ProbeID:int,NetworkName,VLANID:int) -> None :
+        Path = '/api/Networks/Create'
+        Data = {"PixisProbeId": ProbeID,"NetworkName": NetworkName,"VlanId": VLANID}
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def AddRange(self,mIP:str,gwIP:str,NetworkName:str) -> None :
+        manageIP = str(mIP.split('/')[0])
+        networkeIP = str(ipaddress.ip_interface(mIP).network)
+        IPrange = ipaddress.IPv4Network(networkeIP)
+        submask = str(IPrange.netmask)
+        first,last = str(IPrange[1]),str(IPrange[-2])
+        NetworkerId = self.GetNetworkInfoByName(NetworkName=NetworkName)
+        Path = '/api/IpRanges/V4'
+        Data = {"NetworkId": NetworkerId
+        ,"Name": networkeIP
+        ,"ManagementIp": manageIP
+        ,"StartIp": first
+        ,"EndIp": last
+        ,"GatewayIp": gwIP
+        ,"SubnetMask": submask}
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def AddDHCPool(self,RangeName:str,StartIP:str,EndIP:str) -> None:
+        RangeID = self.GetIPRangeInfoByName(RangeName=RangeName)
+        Path = '/api/DhcpPools'
+        Data ={
+                # "Id": 0,
+                "IpRangeId": RangeID,
+                "StartIp": StartIP,
+                "EndIp": EndIP,
+                "PoolType": 0,
+                "EnableStaticIpBlock": False,
+                "EnableOnlyAssignDHCPStaticIPPolicy": False
+                }
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def AddDNSByNetwork(self,NetworkName:str,DNS1:str,DNS2:str,LeaseMinuteTime:int)-> None:
+        NetWorkerID = self.GetNetworkInfoByName(NetworkName=NetworkName)
+        Path = f'/api/Networks/{NetWorkerID}/DHCPv4Setting'
+        Data = {
+                "DNS1": DNS1,
+                "DNS2": DNS2,
+                "LeaseTimeInMinute": LeaseMinuteTime,
+                "DhcpProxyServer": "",
+                "VlanInformation": "",
+                "AvayaOption": "",
+                "CallServerInformation": ""
+                }
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+    
+    def EnablePortWorker(self,isTrunk:bool,VLANId:int,Enable:bool,PortWorkerID:str,ManageIPCIDR:str,Gateway:str) -> None:
+        Path = f'/api/PortWorkers/{PortWorkerID}'
+        Data = {
+          "IsTrunkPort": isTrunk,
+          "DefaultVlanId": VLANId,
+          "PortWorkerId": int(PortWorkerID),
+          "Name": PortWorkerID,
+        #   "SiteId": SiteId,
+          "Enable": Enable,
+          "CommunicationIP": ManageIPCIDR.split('/')[0],
+          "DefaultManagementIP": ManageIPCIDR,
+          "DefaultGateway": Gateway,
+        #   "Id": 15,
+          "HasNetwork": False,
+          "HasCommunicationIP": False
+        }
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+
 #endregion
 
 #region PreCheck related
@@ -862,5 +994,4 @@ class AthenacWebAPILibry:
                 ,'IsOnline':i['IsOnline']
                 })
         return result
-        
 #endregion

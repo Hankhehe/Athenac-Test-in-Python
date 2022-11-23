@@ -30,18 +30,18 @@ class AthenacCoreAPILibry:
         Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':hostobject,'SenderID':0}
         requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
 
-    # async def SendEventOfOnorOfflinebyAsync(self,ip:str,mac:str,vlanID:int,isonline:bool,isIPv6:bool=False) -> None:
-    #     Path = '/PortWorkerReport'
-    #     if isIPv6 :
-    #         if isonline : actioncode = 774
-    #         else : actioncode = 775
-    #     else:
-    #         if isonline : actioncode = 772
-    #         else : actioncode = 773
-    #     Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
-    #     hostobject = {'IsNewMacOnline':True,'IP':ip,'MAC':mac,'VLANID':vlanID,'ActionCode':actioncode}
-    #     Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':hostobject,'SenderID':0}
-    #     await requests_async.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+    async def SendEventOfOnorOfflinebyAsync(self,ip:str,mac:str,vlanID:int,isonline:bool,isIPv6:bool=False) -> None:
+        Path = '/PortWorkerReport'
+        if isIPv6 :
+            if isonline : actioncode = 774
+            else : actioncode = 775
+        else:
+            if isonline : actioncode = 772
+            else : actioncode = 773
+        Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
+        hostobject = {'IsNewMacOnline':True,'IP':ip,'MAC':mac,'VLANID':vlanID,'ActionCode':actioncode}
+        Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':hostobject,'SenderID':0}
+        await requests_async.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
 
     def AuthMACFromUserApply(self,ip:str,mac:str,account:str,pwd:str)->None:
         adname = account

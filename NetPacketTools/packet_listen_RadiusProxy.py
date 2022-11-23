@@ -32,12 +32,12 @@ class PacketListenRadiusProxy:
         if Packet['Radius'].code == 1 :
             self.radiusrequestauthcode =  bytes(Packet.authenticator)
             self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusServerIP,srcport =Packet['UDP'].sport,dstport = self.RadiusPort)
+        elif Packet['Radius'].code == 11 :
+            self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
         elif Packet['Radius'].code == 2 :
             self.SendAcceptAndReplaceVLANID(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
         elif Packet['Radius'].code == 3 :
             self.SendReject(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport,secrectkey=self.secrectkey)
-        elif Packet['Radius'].code == 11 :
-            self.ForwardRadiusPacke(Packet=Packet['Radius'],dip=self.RadiusClientIP,srcport =self.RadiusPort,dstport = Packet['UDP'].dport)
         else:pass
     
     def ForwardRadiusPacke(self,Packet,dip:str,srcport:int,dstport:int):
@@ -48,10 +48,12 @@ class PacketListenRadiusProxy:
         srp(RadiusReq,timeout=5,iface=self.nicName)
     
     def SendReject(self,Packet,dip:str,srcport:int,dstport:int,secrectkey:bytes):
-        Packet['RadiusAttr_EAP_Message'].value.code = 4
         RadiusPaylod = Radius(code=3,id=Packet.id,authenticator=self.radiusrequestauthcode
-        ,attributes=[RadiusAttr_EAP_Message(value=Packet['RadiusAttr_EAP_Message'].value)
-                ,RadiusAttr_Message_Authenticator(type =80,value=bytes.fromhex('0'*32))])
+        ,attributes=[RadiusAttr_Message_Authenticator(type =80,value=bytes.fromhex('0'*32))])
+
+        if RadiusAttr_EAP_Message in Packet:
+            Packet['RadiusAttr_EAP_Message'].value.code = 4
+            RadiusPaylod.attributes.append(RadiusAttr_EAP_Message(value=Packet['RadiusAttr_EAP_Message'].value))
 
         # 額外加入 VLAN ID 的 Attribute    
         # RadiusPaylod.attributes.append(RadiusAttribute(type=65,value=bytes.fromhex('00000006')))
@@ -70,7 +72,8 @@ class PacketListenRadiusProxy:
         Packet.len = None
         if Packet.code == 3 :
             Packet.code = 2
-            Packet['RadiusAttr_EAP_Message'].value.code = 3
+            if RadiusAttr_EAP_Message in Packet :
+                Packet['RadiusAttr_EAP_Message'].value.code = 3
         
         #新增 VLAN ID 相關的 Attributes
         Packet.attributes.append(RadiusAttribute(type=65,value=bytes.fromhex('00000006')))
@@ -78,8 +81,9 @@ class PacketListenRadiusProxy:
         Packet.attributes.append(RadiusAttribute(type=64,value=bytes.fromhex('0000000d')))
 
         Packet.authenticator = self.radiusrequestauthcode
-        Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex('0'*32)
-        Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex(hmac.new(secrectkey,bytes(Packet),hashlib.md5).hexdigest())
+        if RadiusAttr_Message_Authenticator in Packet:
+            Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex('0'*32)
+            Packet['RadiusAttr_Message_Authenticator'].value = bytes.fromhex(hmac.new(secrectkey,bytes(Packet),hashlib.md5).hexdigest())
         Packet.authenticator = bytes.fromhex(hashlib.md5(bytes(Packet)+secrectkey).hexdigest())
         RadiusReq =Ether(src =self.mac,dst=self.GatewayMAC)\
          /IP(src=self.Ip,dst=dip)\

@@ -2,7 +2,7 @@ import time,re
 from CreateData import macrelated,iprelated
 from scapy.all import get_working_if,get_working_ifaces,srp,sendp,conf,Ether,ARP,IP,UDP,BOOTP,DHCP,IPv6,DHCP6_Solicit,DHCP6OptElapsedTime,DHCP6OptClientId\
    ,DHCP6OptIA_NA,DHCP6OptOptReq,DHCP6_Request,DHCP6OptServerId,DHCP6OptIAAddress,ICMPv6NDOptDstLLAddr,DHCP6_Advertise,ICMPv6ND_NS,ICMPv6NDOptSrcLLAddr\
-      ,ICMPv6ND_RA,ICMPv6NDOptMTU,ICMPv6NDOptPrefixInfo,ICMPv6ND_NA,Radius,RadiusAttr_NAS_IP_Address,RadiusAttribute
+      ,ICMPv6ND_RA,ICMPv6NDOptMTU,ICMPv6NDOptPrefixInfo,ICMPv6ND_NA,Radius,RadiusAttr_NAS_IP_Address,RadiusAttribute,NBNSRequest
 
 class PacketAction:
 
@@ -157,6 +157,7 @@ class PacketAction:
       return result[0][1][ARP].hwsrc if result else None
       
    def GetRadiusReply(self,serverip:str,nasip:str)->dict | None:
+      '''Radius Code : Accept =2 , Reject =3'''
       dstmac = self.GetIPv4MAC(self.gatewayIp)
       if not dstmac: return
       RadiusReq =Ether(src =self.mac,dst=dstmac)\
@@ -165,8 +166,17 @@ class PacketAction:
                /Radius(authenticator=b'pixis',attributes=[RadiusAttr_NAS_IP_Address(value=nasip.encode('utf-8')),RadiusAttribute(type=31,len=19,value=self.mac.encode('utf-8'))])
       result ,nums =srp(RadiusReq,retry=3,timeout=5,iface=self.nicname)
       if not result : return
-      if len(result[0][1][Radius].attributes) > 1 :
-         return {'RadiusCode':result[0][1][Radius].code,'VLANId':result[0][1][Radius].attributes[1].value.decode('utf-8')}
-      else : 
-         return {'RadiusCode':result[0][1][Radius].code}
-      #Radius Code : Accept =2 , Reject =3
+      ReplyData = {}
+      ReplyData['RadiusCode'] = result[0][1][Radius].code
+      for resultdata in result[0][1][Radius].attributes:
+         if resultdata.type == 81:
+            ReplyData['VLANId'] = resultdata.value.decode('utf-8')
+            break
+      return ReplyData
+   
+   def SendNBNSResponse(self,name:str,workgroup:bool) -> None:
+      NBNSResponsepacket = Ether(src=self.mac,dst='ff:ff:ff:ff:ff:ff')\
+         /IP(src=self.Ip,dst='255.255.255.255')\
+            /UDP(sport=137,dport=137)\
+               /NBNSRequest(NB_ADDRESS=self.Ip,QUESTION_NAME=name,G=workgroup)
+      sendp(NBNSResponsepacket,iface=self.nicname)
