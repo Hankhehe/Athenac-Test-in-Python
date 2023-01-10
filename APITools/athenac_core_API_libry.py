@@ -1,13 +1,17 @@
-# import requests_async
 import json,re,time,requests
 from CreateData import macrelated
+from requests_toolbelt.adapters.source import SourceAddressAdapter
 
 class AthenacCoreAPILibry:
-    def __init__(self,ServerIP:str,pixisprobeid:str,probedaemonId:str) -> None:
+    def __init__(self,ServerIP:str,pixisprobeid:str,probedaemonId:str,nicip:str) -> None:
         self.ServerIP = ServerIP
         self.PixisProbeId = pixisprobeid
         self.ProbeDaemonId = probedaemonId
         self.retriesnum = 3
+        self.APIsource = requests.Session()
+        self.APIsource.mount('http://',SourceAddressAdapter(nicip))
+        self.APIsource.mount('https://',SourceAddressAdapter(nicip))
+        self.APIsource.trust_env=False
 
     def LoginProbeToServer(self,daemonip:str,mac:str) -> None:
         mac = macrelated.FormatMACbyPunctuation(mac=mac,Punctuation='')
@@ -15,7 +19,7 @@ class AthenacCoreAPILibry:
         Header = {'Content-type': 'application/json'}
         Data = {'ProbeDaemonId':self.ProbeDaemonId,'IpAddress':daemonip,'MacAddress':mac,'Ethernets':[{'Key':1,'Value':mac}]
         ,'DeviceType':'Linux','DaemonVersion':'9.9.9.9','PortWorkerVersion':'9.9.9.9'}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
 
     def SendEventOfOnorOffline(self,ip:str,mac:str,vlanID:int,isonline:bool,isIPv6:bool=False) -> None:
         Path = '/PortWorkerReport'
@@ -28,20 +32,7 @@ class AthenacCoreAPILibry:
         Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
         hostobject = {'IsNewMacOnline':True,'IP':ip,'MAC':mac,'VLANID':vlanID,'ActionCode':actioncode}
         Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':hostobject,'SenderID':0}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
-
-    async def SendEventOfOnorOfflinebyAsync(self,ip:str,mac:str,vlanID:int,isonline:bool,isIPv6:bool=False) -> None:
-        Path = '/PortWorkerReport'
-        if isIPv6 :
-            if isonline : actioncode = 774
-            else : actioncode = 775
-        else:
-            if isonline : actioncode = 772
-            else : actioncode = 773
-        Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
-        hostobject = {'IsNewMacOnline':True,'IP':ip,'MAC':mac,'VLANID':vlanID,'ActionCode':actioncode}
-        Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':hostobject,'SenderID':0}
-        await requests_async.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+        self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
 
     def AuthMACFromUserApply(self,ip:str,mac:str,account:str,pwd:str)->None:
         adname = account
@@ -63,7 +54,40 @@ class AthenacCoreAPILibry:
         ,'EnableMailVaildation':False
         ,'SiteVerifyModule':0}
         Data = {'ActionCode':2305, 'IsValid':True, 'Payload':None, 'PayloadObject':authdata,'SenderID':0}
-        requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data) ,verify=False)
+        self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data) ,verify=False)
+
+#region Abnormal
+
+    def SendBroOrMulticastlimitevent(self,ip:str| None,mac:str,VLANID:int,start:bool,isIPv6:bool=False) -> None:
+        Path = '/PortworkerReport'
+        actioncode = 1028 #broadcast stop
+        if start and not isIPv6: actioncode = 1027 #broadcast start
+        elif start and isIPv6 : actioncode, ip = 1029, None #multi start
+        elif not start and isIPv6 : actioncode, ip = 1030, None #multi stop
+        Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
+        PayloadObj = {'ActionCode':actioncode
+        ,'ExceededValue':6000
+        ,'IP':ip
+        ,'MAC':mac
+        ,'VLANIDs':[VLANID]}
+        Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':PayloadObj,'SenderID':0}
+        self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+
+    def SendUnknowDHCP(self,ip:str,mac:str,VLANID:int,start:bool) -> None:
+        Path = '/PortworkerReport'
+        actioncode = 1032 # unknowDHCP stop
+        if start : actioncode = 1031 # unknowDHCP start
+        Header = {'PixisProbeId':self.PixisProbeId, 'ProbeDaemonId':self.ProbeDaemonId, 'Content-type': 'application/json'}
+        PayloadObj = {'ActionCode':actioncode
+        ,'RelayDHCPServerIP':None
+        ,'LinkLayerAddress':None
+        ,'IP':ip
+        ,'MAC':mac
+        ,'VLANID':VLANID}
+        Data = {'ActionCode':actioncode,'IsValid':True,'Payload':None,'PayloadObject':PayloadObj,'SenderID':0}
+        self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+
+#endregion Abnormal
 
 #region hostagent related
 
@@ -90,14 +114,14 @@ class AthenacCoreAPILibry:
         else: return
         Header = {'Content-type': 'application/json'}
         try:
-            requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
         except Exception:
             print('error 2')
     
     def SendGetAllMAC(self)->None:
         Path = '/HostAgent/GetAllProbeMACs'
         try:
-            requests.get(self.ServerIP+Path,verify=False)
+            self.APIsource.get(self.ServerIP+Path,verify=False)
         except Exception:
             print('error')
             
@@ -109,6 +133,6 @@ class AthenacCoreAPILibry:
             KBNum.append(f'Hotfix {str(i)} - KB{str(i)}')
         Data = {'macs':mac,'Hotfixs':KBNum,'IPList':ip,'HotfixLastCheckTime':checktime}
         Header = {'Content-type':'application/x-www-form-urlencoded'}
-        requests.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
+        self.APIsource.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
     
 #endregion

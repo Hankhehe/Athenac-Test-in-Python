@@ -1,13 +1,13 @@
-from selectors import SelectorKey
-import time
+import time,json
 
 
 class RadiusSetting:
-    def __init__(self,SiteId:int,DeviceDivideType:int=2,EnableDynamicVLAN:bool=True,EnableExternalAutoQuarantine:bool=False
+    def __init__(self,SiteId:int,DeviceDivideType:int=2,EnableBlockMessageAndVerification:bool=True,EnableDynamicVLAN:bool=True,EnableExternalAutoQuarantine:bool=False
     ,EnableExternalOnlineVerification:bool=False,EnableInternalAutoQuarantine:bool=False,EnableInternalOnlineVerification:bool=False
     ,EnableRadius:bool=True,ExternalDefaultVLan:int=81,ExternalQuarantineVLan:int=85,ExternalVerifyVLan:int=83,InternalDefaultVLan:int=80
-    ,InternalQuarantineVLan:int=84,InternalVerifyVLan:int=82,SiteVerifyModule:int=0,VLanMappingType:int=2) -> None:
+    ,InternalPreCheckVLan:int=86,InternalQuarantineVLan:int=84,InternalVerifyVLan:int=82,SiteVerifyModule:int=0,VLanMappingType:int=2) -> None:
         self.DeviceDivideType = DeviceDivideType
+        self.EnableBlockMessageAndVerification = EnableBlockMessageAndVerification
         self.EnableDynamicVLAN = EnableDynamicVLAN
         self.EnableExternalAutoQuarantine = EnableExternalAutoQuarantine
         self.EnableExternalOnlineVerification = EnableExternalOnlineVerification
@@ -18,6 +18,7 @@ class RadiusSetting:
         self.ExternalQuarantineVLan = ExternalQuarantineVLan
         self.ExternalVerifyVLan = ExternalVerifyVLan
         self.InternalDefaultVLan = InternalDefaultVLan
+        self.InternalPreCheckVLan = InternalPreCheckVLan
         self.InternalQuarantineVLan = InternalQuarantineVLan
         self.InternalVerifyVLan = InternalVerifyVLan
         self.SiteId = SiteId
@@ -68,4 +69,23 @@ class HostAgentClientInfo:
         self.windowsHotFixLastCheckTime = windowshotfixlastchecktime
         self.localAdminAccount = localadminaccount
         self.timestamp = time.strftime('%Y-%m-%d'+'T'+'%H:%M:%S')
+
+class SettingConfigByTest:
+    def __init__(self,jsonfilepath:str) -> None:
+        with open(jsonfilepath,'r',encoding='UTF-8') as f:
+            configdata = json.loads(f.read())
+        self.serverIP:str = configdata['serverIP']
+        self.APIaccount:str = configdata['APIaccount']
+        self.APIPwd:str = configdata['APIpwd']
+        self.TestIPv4:str = configdata['TestIPv4']
+        self.TestIPv6:str = configdata['TestIPv6']
+        self.ProbeMAC:str = configdata['ProbeMAC']
+        self.VLANIDMapping:int = configdata['VLANIDMapping']
+        self.SiteID:int = configdata['SiteId']
+        self.DynamicAVPID:int = configdata['DynamicAVPID']
+        self.AuthAVPID:int = configdata['AuthAVPID']
+        self.lan1:str = configdata['lan1']
+        self.lan2:str = configdata['lan2']
+        self.probeID:str = configdata['probeID']
+        self.daemonID:str = configdata['daemonID']
 

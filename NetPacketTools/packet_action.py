@@ -155,6 +155,16 @@ class PacketAction:
          /ARP(op=1,hwsrc=self.mac, hwdst="00:00:00:00:00:00",psrc=self.Ip, pdst=dstip)
       result ,nums = srp(arprequest, retry=2,timeout=5,iface=self.nicname)
       return result[0][1][ARP].hwsrc if result else None
+   
+   def GetIPv6MAC(self,dstipv6:str) -> str | None:
+      IPv6IPfull = iprelated.ConvertIPv6ShortToIPv6Full(dstipv6)
+      dstMACformulti = ':'.join( re.findall(r'.{2}','3333ff'+ IPv6IPfull[-7:].replace(':','')))
+      dipformulti = 'ff02::1:ff'+IPv6IPfull[-7:]
+      NDPSolic = Ether(src =self.mac,dst=dstMACformulti)\
+         /IPv6(src=self.globalIp,dst=dipformulti)\
+            /ICMPv6ND_NS(tgt=dstipv6)
+      result ,nums = srp(NDPSolic,retry=2,timeout=5,iface=self.nicname,multi=True)
+      return result[0][1][ICMPv6NDOptDstLLAddr].lladdr if result else None
       
    def GetRadiusReply(self,serverip:str,nasip:str)->dict | None:
       '''Radius Code : Accept =2 , Reject =3'''

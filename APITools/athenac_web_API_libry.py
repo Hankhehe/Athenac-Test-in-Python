@@ -2,31 +2,28 @@ import requests,json,re,time,ipaddress
 from urllib import parse
 from CreateData import iprelated,macrelated
 from APITools.DataModels.datamodel_apidata import RadiusSetting,RadiusClient,BlockMessageSetting
+from requests_toolbelt.adapters.source import SourceAddressAdapter
 
 class AthenacWebAPILibry:
-    def __init__(self,ServerIP:str,Account:str,Pwd:bytes) -> None:
+    def __init__(self,ServerIP:str,Account:str,Pwd:bytes,nicip:str) -> None:
         self.ServerIP = ServerIP
         self.Account = Account
         self.Pwd = Pwd
         self.Token = ''
         self.FreshToken = ''
         self.retriesnum = 3
+        self.APIsource = requests.Session()
+        self.APIsource.mount('http://',SourceAddressAdapter(nicip))
+        self.APIsource.mount('https://',SourceAddressAdapter(nicip))
+        self.APIsource.trust_env=False
         self.GetLoginToken()
-
-    def GetSiteID(self,name:str)->None:
-        path = f'/api/Sites/Query'
-        Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-        Data = {'Take':0}
-        r = requests.post(self.ServerIP+path,headers=Header,data=json.dumps(Data),verify=False)
-        r = json.loads(r.text)['Data']
-        pass
 
     def GetPortWorerkIPbyID(self,portworkerID:str)-> str | None:
         r = None
         path = '/api/Probes'
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.get(self.ServerIP+path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP+path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -43,7 +40,7 @@ class AthenacWebAPILibry:
         Header = {'Content-Type': 'application/x-www-form-urlencoded' }
         FormData = {"grant_type": 'password','scope':'offline_access', 'username': self.Account, 'password': self.Pwd} 
         Data = parse.urlencode(FormData)
-        r = requests.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
+        r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=Data,verify=False)
         r = json.loads(r.text)
         self.Token = 'Bearer '+ r['access_token']
         self.FreshToken ='Bearer ' + r['refresh_token']
@@ -52,7 +49,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP + Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -69,7 +66,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.get(self.ServerIP + Path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP + Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -89,7 +86,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r= self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401 :
@@ -115,7 +112,7 @@ class AthenacWebAPILibry:
         else: Path = f'/api/Hosts/UnAuthorizeIP/{ipdata["HostId"]}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -128,7 +125,7 @@ class AthenacWebAPILibry:
         else: Path = f'/api/Hosts/UnBlockIp/V4/{ipdata["HostId"]}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -142,7 +139,7 @@ class AthenacWebAPILibry:
         Data = {'HostId': macdata['HostId'], 'IP': ip, 'MAC': mac, 'IpCustomField': {}, 'MacCustomField': {}}
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -156,7 +153,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -174,7 +171,7 @@ class AthenacWebAPILibry:
             Path= f'/api/Hosts/IpProtection/Delete/{ipProtectionId["Id"]}'
             for retries in range(self.retriesnum):
                 Header = {'Authorization':self.Token}
-                r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+                r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
                 if r.status_code == 200:
                     break
                 elif r.status_code == 401:
@@ -186,7 +183,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Hosts/AddMacBindingIp/{ipdata["HostId"]}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -198,7 +195,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Hosts/Delete/Ip/{ipdata["HostId"]}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -217,7 +214,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum) :
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r= requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r= self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -248,7 +245,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -264,7 +261,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -281,7 +278,7 @@ class AthenacWebAPILibry:
         else: return
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -293,7 +290,7 @@ class AthenacWebAPILibry:
             Path = f'/api/Hosts/PreCheckManualDoWork/{macdata["MacAddressId"]}'
             for retriescount in range(self.retriesnum):
                 Header = {'Authorization':self.Token}
-                r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+                r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
                 if r.status_code == 200:
                     break
                 elif r.status_code == 401:
@@ -306,7 +303,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Hosts/DeleteMacs/{macdata["MacAddressId"]}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -329,7 +326,7 @@ class AthenacWebAPILibry:
         result,r = [],None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -361,7 +358,7 @@ class AthenacWebAPILibry:
         result = []
         for retriescount in range(self.retriesnum):
             Header ={'Authorization':self.Token}
-            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -381,7 +378,7 @@ class AthenacWebAPILibry:
         result = []
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -401,7 +398,7 @@ class AthenacWebAPILibry:
         result = []
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -420,7 +417,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -438,7 +435,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header ={'Authorization':self.Token}
-            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -461,7 +458,7 @@ class AthenacWebAPILibry:
         result = []
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -482,7 +479,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -496,7 +493,7 @@ class AthenacWebAPILibry:
         Path = '/api/Site/Radius'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+            r = self.APIsource.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -510,7 +507,7 @@ class AthenacWebAPILibry:
             Data['Id']=vlanmappingdata['Id']
             for retriescount in range(self.retriesnum):
                 Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-                r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+                r = self.APIsource.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
                 if r.status_code == 200:
                     break
                 elif r.status_code == 401:
@@ -518,7 +515,7 @@ class AthenacWebAPILibry:
         else:
             for retriescount in  range(self.retriesnum):
                 Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-                r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+                r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
                 if r.status_code == 200:
                     break
                 elif r.status_code == 401:
@@ -530,7 +527,7 @@ class AthenacWebAPILibry:
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmapping["Id"])}'
             for retriescount in  range(self.retriesnum):
                 Header = {'Authorization':self.Token}
-                r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+                r = self.APIsource.delete(self.ServerIP+Path,headers=Header,verify=False)
                 if r.status_code == 200:
                     break
                 elif r.status_code == 401:
@@ -541,7 +538,7 @@ class AthenacWebAPILibry:
             Path = f'/api/Site/RadiusVLanMapping/{str(vlanmappingdata["Id"])}'
             for retriescount in range(self.retriesnum):
                 Header = {'Authorization':self.Token}
-                r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+                r = self.APIsource.delete(self.ServerIP+Path,headers=Header,verify=False)
                 if r.status_code == 200:
                     break
                 elif r.status_code == 401:
@@ -561,7 +558,7 @@ class AthenacWebAPILibry:
         result = []
         for retriescount in range(self.retriesnum):   
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}     
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -582,7 +579,7 @@ class AthenacWebAPILibry:
         Path = '/api/Site/RadiusClient'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data.__dict__),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -597,7 +594,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Site/RadiusClient/{str(id)}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
-            r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.delete(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -611,7 +608,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Sites/{siteid}/ToggleMacSafeMode'
         for restiescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -621,7 +618,7 @@ class AthenacWebAPILibry:
         Path= f'/api/Sites/{siteid}/ToggleIPv4SafeMode'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -631,7 +628,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Sites/{siteid}/ToggleMonitorMode'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps({'Value':enable}),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code ==401:
@@ -642,7 +639,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Site/{siteid}/BlockMessage'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(config.__dict__),verify=False)
+            r = self.APIsource.put(self.ServerIP+Path,headers=Header,data=json.dumps(config.__dict__),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -653,18 +650,18 @@ class AthenacWebAPILibry:
         Data = {'ADAutoRegisterMode':registtype}
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
                 self.GetLoginToken()
 
-    def AddDomainServerforAutoRegist(self,domainname:str,ip:str,siteid:str)->None:
+    def AddDomainServerforAutoRegist(self,domainname:str,ip:str,siteid:int)->None:
         Path = '/api/Site/Domain'
         Data = {'Ip':ip,'Name':domainname,'SiteId':siteid,'URL':''}
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -677,7 +674,7 @@ class AthenacWebAPILibry:
         r = None
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -692,7 +689,7 @@ class AthenacWebAPILibry:
         Path = f'/api/Site/{siteid}/Domain/{id}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.delete(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.delete(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -714,7 +711,7 @@ class AthenacWebAPILibry:
         Data = {'take':0,'filter':{'logic':'and','filters':filters}}
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -738,7 +735,7 @@ class AthenacWebAPILibry:
         r = None
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.get(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.get(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -756,7 +753,7 @@ class AthenacWebAPILibry:
         Data = {'take':0}
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -767,17 +764,44 @@ class AthenacWebAPILibry:
                 if i['NetworkName'] == NetworkName :
                     return i['NetworkId']
 
+    def GetSiteInfoByName(self,SiteName:str) ->int | None:
+        r = None
+        Path = '/api/Sites/Query'
+        Data = {'take':0}
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+        if r :
+            r = json.loads(r.text)['Data']
+            for i in r :
+                if i['SiteName'] == SiteName :
+                    return i['SiteId']
+
     def AddNetwork(self,ProbeID:int,NetworkName,VLANID:int) -> None :
         Path = '/api/Networks/Create'
         Data = {"PixisProbeId": ProbeID,"NetworkName": NetworkName,"VlanId": VLANID}
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
                 self.GetLoginToken()
-    
+
+    def DelNetwork(self,NetworkID:int) -> None:
+        Path = f'/api/Networks/{NetworkID}'
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = self.APIsource.delete(self.ServerIP+Path,headers=Header,verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+
     def AddRange(self,mIP:str,gwIP:str,NetworkName:str) -> None :
         manageIP = str(mIP.split('/')[0])
         networkeIP = str(ipaddress.ip_interface(mIP).network)
@@ -795,7 +819,7 @@ class AthenacWebAPILibry:
         ,"SubnetMask": submask}
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -815,7 +839,7 @@ class AthenacWebAPILibry:
                 }
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -835,7 +859,7 @@ class AthenacWebAPILibry:
                 }
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -859,7 +883,18 @@ class AthenacWebAPILibry:
         }
         for retirescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            if r.status_code == 200:
+                break
+            elif r.status_code == 401:
+                self.GetLoginToken()
+
+    def ChangeSitePropertise(self,Threshold:int,siteID,SiteName:str='AutoTestSite') -> None:
+        Path = f'/api/Site/{siteID}/Properties'
+        Data = {'Name':SiteName,'Ipv4BroadcastLimit':Threshold,'Ipv6MulticastLimit':Threshold}
+        for retirescount in range(self.retriesnum):
+            Header = {'Authorization':self.Token,'Content-type': 'application/json'}
+            r = self.APIsource.put(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -873,7 +908,7 @@ class AthenacWebAPILibry:
         Path = '/api/PreCheck/Create'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -938,7 +973,7 @@ class AthenacWebAPILibry:
         result = []
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -958,12 +993,12 @@ class AthenacWebAPILibry:
         Path = f'/api/PreCheck/Delete/{precheckid}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/x-www-form-urlencoded'}
-            r = requests.post(self.ServerIP+Path,headers=Header,verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
                 self.GetLoginToken()
-    
+
     def ClearAllPrecheckRule(self)->None:
         precheckdatas = self.GetPrecheckRuleList()
         for precheckdata in precheckdatas:
@@ -975,7 +1010,7 @@ class AthenacWebAPILibry:
         r,result = None,[]
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token,'Content-type': 'application/json'}
-            r = requests.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
+            r = self.APIsource.post(self.ServerIP+Path,headers=Header,data=json.dumps(Data),verify=False)
             if r.status_code == 200:
                 break
             elif r.status_code == 401:
@@ -994,4 +1029,5 @@ class AthenacWebAPILibry:
                 ,'IsOnline':i['IsOnline']
                 })
         return result
-#endregion
+
+#endregion 
