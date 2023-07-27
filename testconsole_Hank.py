@@ -6,9 +6,10 @@ from APITools.athenac_probe_API_libry import AthenacProbeAPILibry
 from NetPacketTools.packet_listen_RadiusProxy import PacketListenRadiusProxy
 from CreateData import iprelated,macrelated
 from NetPacketTools.packet_action_DHCPasync import PacketActionDHCPasync
-from NetPacketTools.packet_calculator.calculate_8021X import Calculate8021X
+from NetPacketTools.packet_calculator.analyze_packet_pcap import AnalyzePacket
 from APITools.DataModels.datamodel_apidata import SettingConfigByTest
 from multiprocessing import Pool
+from GRPC_Client.athenac_probe_grpc_libry import Athenac_Probe_GRPC_libry
 
 # 計算 Radius 封包的 Message Auth 和 Authenticator
 # Calculate8021X().CalculateHashFromPacket(pcapfilepath='NetPacketTools/packet_calculator/RadiusPacket.pcap',RespounseIdx=2,RequestIdx=1,secrectkey=b'pixis')
@@ -67,16 +68,36 @@ def SendIPConflict(IP:str,MAClist:list[str])->None:
 
 
 #region config
-Testconfig_ = SettingConfigByTest('ConfigJson/Server_ReleaseTest.json')
+Testconfig_ = SettingConfigByTest('ConfigJson/Server_21.json')
 lan1_ = PacketAction(Testconfig_.lan1)
 lan1MACUpper_ = ''.join(lan1_.mac.upper().split(':'))
 lan2_ = PacketAction(Testconfig_.lan2)
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
+
+lan = PacketAction('Ethernet3')
+
+iplist = iprelated.CreateIPDataByCIDROrPrifix('172.16.0.0/19')
+iplist2 = iprelated.CreateIPDataByCIDROrPrifix('10.10.1.0/19')
+maclist = macrelated.CreateMACData(mac='AA0000000000',count=len(iplist))
+maclist2 = macrelated.CreateMACData(mac='AC0000000000',count=len(iplist2))
+
+while True:
+    for i in range(1,1000+1):
+        lan.SendARPReply(IP= str(iplist[i]),MAC=maclist[i])
+        # print(lan.GetIPfromDHCPv4(tranId=i,mac=str(maclist2[i])))
+        # time.sleep(1)
+    
+    for i in range(1,100+1):
+        lan.SendARPReply(IP=str(iplist2[i]),MAC=maclist2[i])
+    time.sleep(120)
+pass
+
 AthenacWebAPI_ = AthenacWebAPILibry(f'https://{Testconfig_.serverIP}:8001',Testconfig_.APIaccount,base64.b64encode(Testconfig_.APIPwd.encode('UTF-8')),lan1_.Ip)
 AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{Testconfig_.serverIP}:18000',Testconfig_.probeID,Testconfig_.daemonID,lan1_.Ip)
 AthenacProbeAPI_ = AthenacProbeAPILibry(f'http://{AthenacWebAPI_.GetPortWorerkIPbyID(Testconfig_.probeID)}:18002',lan1_.Ip)
 
 #endregion config
+
 
 # lan1_.SendNBNSResponse(name='Hank',workgroup=False) #發送主機名稱 by NBNS
 # lan1_.SendNBNSResponse(name='WORKGROUP',workgroup=True) #發送網域群組 by NBNS

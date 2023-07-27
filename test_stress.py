@@ -92,16 +92,13 @@ class TestLotOfDevice:
                 assert onlineHostsdict[str(ipv6list[i])] == maclist[i],f'{str(ipv6list[i])} MAC is not {maclist[i]},it is {onlineHostsdict[str(ipv6list[i])]}'
             else : assert False,f'It can not found IPv6 {str(ipv6list[i])} in hosts as online'
     
-    def test_SendIPv4OnlineOrOfflineByAPI(self,CIDR:str,VLANId:int,isOnline:bool,IPv6:bool) -> None:
+    def test_SendOnlineOrOfflineByAPI(self,CIDR:str,VLANId:int,isOnline:bool,IPv6:bool) -> None:
         '''透過模擬 Probe 打 API 觸發上線或下線事件給 Server'''
         iplist = iprelated.CreateIPDataByCIDROrPrifix(cidr=CIDR)
         #產生大量 MAC 從 AA0000000000 開始到 AA00000000FF ，數量由 IP 數決定
         maclist = macrelated.CreateMACData(mac='AA0000000000',count=len(iplist))
-        inputs = []
         for i in range(1,len(iplist)):
-            inputs.append((str(iplist[i]),str(maclist[i]),VLANId,isOnline,IPv6))
-        pool = Pool(14)
-        pool.starmap(AthenacCoreAPI_.SendEventOfOnorOffline,inputs)
+            AthenacCoreAPI_.SendEventOfOnorOffline(ip=str(iplist[i]),mac=str(maclist[i]),vlanID=VLANId,isonline=isOnline,isIPv6=IPv6)
 
 #region Config
 Testconfig_ = SettingConfigByTest('ConfigJson/Server_ReleaseTest.json')
@@ -109,22 +106,21 @@ lan1_ = PacketAction(Testconfig_.lan1)
 lan1MACUpper_ = ''.join(lan1_.mac.upper().split(':'))
 lan2_ = PacketAction(Testconfig_.lan2)
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
-AthenacWebAPI_ = AthenacWebAPILibry(f'http://{Testconfig_.serverIP}:8000',Testconfig_.APIaccount,base64.b64encode(Testconfig_.APIPwd.encode('UTF-8')),lan1_.Ip)
-AthenacCoreAPI_ = AthenacCoreAPILibry(f'http://{Testconfig_.serverIP}:18000',Testconfig_.probeID,Testconfig_.daemonID,lan1_.Ip)
+AthenacWebAPI_ = AthenacWebAPILibry(f'https://{Testconfig_.serverIP}:8001',Testconfig_.APIaccount,base64.b64encode(Testconfig_.APIPwd.encode('UTF-8')),lan1_.Ip)
+AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{Testconfig_.serverIP}:18000',Testconfig_.probeID,Testconfig_.daemonID,lan1_.Ip)
 AthenacProbeAPI_ = AthenacProbeAPILibry(f'http://{AthenacWebAPI_.GetPortWorerkIPbyID(Testconfig_.probeID)}:18002',lan1_.Ip)
 
 # endregion Config
 
 if __name__ == '__main__':
-    # LotDeviceTest = TestLotOfDevice()
-    # LotDeviceTest.test_SendIPv4OnlineOrOfflineByAPI(CIDR='172.17.0.0/17',VLANId=17,isOnline=True,IPv6=False) #IPv4 上線
-    # LotDeviceTest.test_SendIPv4OnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=True,IPv6=True) #IPv6 上線
-    # LotDeviceTest.test_SendIPv4OnlineOrOfflineByAPI(CIDR='172.17.0.0/17',VLANId=17,isOnline=False,IPv6=False) #IPv4 下線
-    # LotDeviceTest.test_SendIPv4OnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=False,IPv6=True) #IPv6 下線
+    LotDeviceTest = TestLotOfDevice()
+    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='172.17.0.0/17',VLANId=17,isOnline=True,IPv6=False) #IPv4 上線
+    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=True,IPv6=True) #IPv6 上線
+    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='172.24.0.0/17',VLANId=24,isOnline=False,IPv6=False) #IPv4 下線
+    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=False,IPv6=True) #IPv6 下線
 
     # LotDeviceTest.test_SendIPv4OnlineByPacket(CIDR='172.17.0.0/17')
     # LotDeviceTest.test_SendIPv6OnlineByPacket(CIDR='2001:b030:2133:811:ffff::/113')
-
-    DHCPTest = TestDHCP()
-    # DHCPTest.test_DHCPAsync(Count=10,logfile='DHCPLog.csv')
-    DHCPTest.test_DHCPv6Async(Count=2000,logfile='DHCPv6Log.csv')
+    # DHCPTest = TestDHCP()
+    # DHCPTest.test_DHCPAsync(Count=50,logfile='DHCPLog.csv')
+    # DHCPTest.test_DHCPv6Async(Count=2000,logfile='DHCPv6Log.csv')

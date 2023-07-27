@@ -87,5 +87,6 @@ class SettingConfigByTest:
         self.lan1:str = configdata['lan1']
         self.lan2:str = configdata['lan2']
         self.probeID:str = configdata['probeID']
+        self.probeIP:str = configdata['ProbeIP']
         self.daemonID:str = configdata['daemonID']
 

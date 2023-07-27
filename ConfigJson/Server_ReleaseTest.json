@@ -3,6 +3,7 @@
     "APIaccount":"autotest",
     "APIpwd":"autotest",
     "probeID":"7640975716",
+    "ProbeIP":"172.17.255.170",
     "daemonID":"7552643052",
     "ProbeMAC":"00:aa:ff:ae:c0:5f",
     "TestIPv4":"172.17.255.187",

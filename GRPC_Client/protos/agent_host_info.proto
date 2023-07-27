@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package PIXIS.Grpc.Protos;
+
+import "google/protobuf/timestamp.proto";
+
+service HostAgentService {
+  rpc SendHostReport (HostReportRequest) returns (HostReportReply) {}
+}
+
+message HostReportRequest {
+    string host_name = 1;
+    repeated string MACs = 2;
+    string domain_name = 3;
+    repeated HostReportLogonUser logon_users = 4;
+    string os_type = 5;
+    string os_product = 6;
+    repeated string share_folder = 7;
+    repeated string pending_hot_fix = 8;
+    google.protobuf.Timestamp windows_hot_fix_last_check_time = 9;
+    repeated string local_admin_account = 10;
+    google.protobuf.Timestamp timestamp = 11;
+    string motherboard_serial_number = 12;
+    repeated Software softwares = 13;
+    string os_display_product =14;
+    string os_build =15;
+    string os_version = 16;
+}
+
+message HostReportLogonUser {
+    string logon_account = 1;
+    bool remote_login = 2;
+    string gpo_result = 3;
+}
+
+message Software {
+    string DisplayName = 1;
+    string DisplayVersion =2;
+    string Publisher =3;
+    string InstallDate =4;
+    string EstimatedSize =5;
+}
+
+message HostReportReply {
+  string Message = 1;
+}

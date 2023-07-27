@@ -1,0 +1,1 @@
+python -m grpc_tools.protoc -I. --python_out=../agent_host_info --pyi_out=../agent_host_info --grpc_python_out=../agent_host_info agent_host_info.proto

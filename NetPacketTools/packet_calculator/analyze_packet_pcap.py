@@ -1,9 +1,9 @@
 from scapy.all import rdpcap,wrpcap,RadiusAttr_Message_Authenticator
 import hashlib,hmac
 
-class Calculate8021X():
+class AnalyzePacket():
 
-    def CalculateHashFromPacket(self,pcapfilepath:str,RespounseIdx:int,RequestIdx:int,secrectkey:bytes):
+    def CalculateHashFromPacket_radius(self,pcapfilepath:str,RespounseIdx:int,RequestIdx:int,secrectkey:bytes):
         '''計算 Radius Challeng 和 accept 的 message-auth 和 authencatitor'''
         
         #使用前一包 Request 的 Authenticator 並將 Message Authenticator 變 0 計算
@@ -15,3 +15,7 @@ class Calculate8021X():
             radiuspacketpayload['RadiusAttr_Message_Authenticator'].value = bytes.fromhex(hmac.new(secrectkey,bytes(radiuspacketpayload),hashlib.md5).hexdigest())
             print('Message-Authen : ' +radiuspacketpayload['RadiusAttr_Message_Authenticator'].value.hex())
         print('authenticator : '+hashlib.md5(bytes(radiuspacketpayload)+secrectkey).hexdigest())
+
+    def Convert_Pcap_to_scapy(self,pcapfilepath:str):
+        packetData = rdpcap(pcapfilepath)
+        pass

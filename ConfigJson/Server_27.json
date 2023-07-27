@@ -3,6 +3,7 @@
     "APIaccount":"admin",
     "APIpwd":"admin",
     "probeID":"10169111673",
+    "ProbeIP":"192.168.27.170",
     "daemonID":"10169111673",
     "TestIPv4":"172.18.255.4",
     "TestIPv6":"2001:b030:2133:812:172:18:255:4",

@@ -9,12 +9,15 @@ charset-normalizer==2.0.12
 colorama==0.4.6
 cryptography==38.0.4
 exceptiongroup==1.1.0
+grpcio==1.54.2
+grpcio-tools==1.54.2
 h11==0.14.0
 idna==3.4
 iniconfig==1.1.1
 outcome==1.2.0
 packaging==22.0
 pluggy==1.0.0
+protobuf==4.23.2
 py==1.11.0
 pycparser==2.21
 pyOpenSSL==22.1.0
