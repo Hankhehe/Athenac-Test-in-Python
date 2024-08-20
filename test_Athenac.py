@@ -3,9 +3,9 @@ from NetPacketTools.packet_action import PacketAction
 from NetPacketTools.packet_listen import PacketListenFromFilter
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.athenac_core_API_libry import AthenacCoreAPILibry
-from APITools.athenac_probe_API_libry import AthenacProbeAPILibry
 from APITools.Enums.enum_flag import RadiusVLANMappingType,SiteVerifyModule,RegisterTypebyAutoRegist
-from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting,HostAgentClientInfo,SettingConfigByTest
+from APITools.DataModels.datamodel_apidata import BlockMessageSetting, RadiusClient, RadiusSetting,SettingConfigByTest
+from GRPC_Client.athenac_probe_grpc_libry import Athenac_Probe_GRPC_libry
 
 class TestIPAM:
     def test_IPBlock(self)->None:
@@ -138,8 +138,8 @@ class TestIPAM:
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=False,siteid=Testconfig_.SiteID) # 關閉 Site MAC 安全模式
 
 class TestAutoRegist:
-    def test_HostAgent(self)->None:
-        '''模擬 Agent 發送假資料給 Server 測試 Server 功能'''
+    def Ctest_HostAgent(self)->None:
+        '''模擬 Agent 發送假資料給 Server 測試 Server 功能，但目前沒有 Agent 所以暫時不測試'''
         def CheckAuth(authtype:int,auth:bool) -> None:
             '''type 1 = it join domain and AD is loging
             type 2 = is not join domain and local account login
@@ -164,9 +164,9 @@ class TestAutoRegist:
             else: check.is_true(False,'Unknow error')
 
         def SendAgentInfo(domain:str,account:str) -> None:
-            AthenacProbeAPI_.SendInfoToProbeByAPI(HostAgentClientInfo(hostName='TestMachine',macs=[lan2MACUpper_],domainname=domain
-            ,logonusers=[{'logonAccount':account,'remoteLogin':False,'gpoResult':None}]
-            ,ostype='windows',osdesc='Windows Test'))
+            AthenacProbe_GRPC.SendHostInfo(AthenacProbe_GRPC.Create_HostInfo(macs=[lan2MACUpper_],DomainName=domain
+            ,Logon_Users=[{'logon_account': account,'remote_login':True,'gpo_result':''}]
+            ,OSType='windows',OS_Display_name='Windows_Test'))
 
         AthenacWebAPI_.SwitchMACSiteSaveMode(enable=True,siteid=Testconfig_.SiteID) #開啟 Site MAC 安全模式
         AthenacWebAPI_.UpdateAutoRegister(registtype=RegisterTypebyAutoRegist.VBS.value,siteid=Testconfig_.SiteID) #啟用 AD 自動授權 by VBS 驗證
@@ -245,9 +245,10 @@ class TestPreCheck:
         AthenacWebAPI_.ClearAllPrecheckRule() #清除所有未符規的規則
         AthenacWebAPI_.CreateUnInstallKBforPrecheckRule(siteid=Testconfig_.SiteID,KBNumbers=[123456]) #設定符規規則且指定要安裝的 KB 檔編號是 123456
         #模擬 Agent 發送資訊給 Server，lan2 的 MAC 未安裝的 KB 編號為 123456
-        AthenacProbeAPI_.SendInfoToProbeByAPI(HostAgentClientInfo(hostName='TestMachine',macs=[lan2MACUpper_],domainname='PIXIS'
-        ,logonusers=[{'logonAccount':'PIXIS\\Hank','remoteLogin':False,'gpoResult':None}]
-        ,ostype='windows',osdesc='Windows Test',pendinghotfix=[f'Hotfix 123456 - KB123456']))
+        AthenacProbe_GRPC.SendHostInfo(AthenacProbe_GRPC.Create_HostInfo(macs=[lan2MACUpper_],DomainName='PIXIS'
+        ,Logon_Users=[{'logon_account':'PIXIS\\Hank','remote_login':True,'gpo_result':''}]
+        ,OSType='windows',OS_Display_name='Windows_Test',Pending_Hotfix=['Hotfix 123456 - KB123456']))
+
         time.sleep(20) #等待 20 秒，因為 Server 可能需要時間判斷
         AthenacWebAPI_.DelIP(ip=lan2_.Ip,siteid=Testconfig_.SiteID) #針對 lan2 的 IP 做 IP 刪除，因為要觸發上線才會觸發未符規封鎖
         lan2_.SendARPReply(IP=lan2_.Ip,Count=2,WaitSec=2) #lan2 使用 lan2 的 IP 發送 ARP，確保主機列表有上線
@@ -266,9 +267,10 @@ class TestPreCheck:
         check.is_true(lan2_.ARPBlockCheck(srcIP=lan2_.Ip,dstIP=lan2_.gatewayIp,ProbeMAC=Testconfig_.ProbeMAC)
         ,f'{lan2MACUpper_} is not receive blocked-reply of ARP while {lan2MACUpper_} is not passing pre-check')
         #模擬 Agent 發送資訊給 Server，lan2 的 MAC 未安裝的 KB 編號為 666666
-        AthenacProbeAPI_.SendInfoToProbeByAPI(HostAgentClientInfo(hostName='TestMachine',macs=[lan2MACUpper_],domainname='PIXIS'
-        ,logonusers=[{'logonAccount':'PIXIS\\Hank','remoteLogin':False,'gpoResult':None}]
-        ,ostype='windows',osdesc='Windows Test',pendinghotfix=[f'Hotfix 666666 - KB666666']))
+        AthenacProbe_GRPC.SendHostInfo(AthenacProbe_GRPC.Create_HostInfo(macs=[lan2MACUpper_],DomainName='PIXIS'
+        ,Logon_Users=[{'logon_account':'PIXIS\\Hank','remote_login':True,'gpo_result':''}]
+        ,OSType='windows',OS_Display_name='Windows_Test',Pending_Hotfix=['Hotfix 666666 - KB666666']))
+
         time.sleep(20)
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=Testconfig_.SiteID)
         time.sleep(2)
@@ -290,10 +292,9 @@ class TestPreCheck:
             check.is_true(False,'Create fail at Precheckrule') 
             return
         #發送 lan2 MAC 的資訊： Hotfix 檢查時間是一個月前，且有一個 hotfix 未安裝來觸發未符規
-        checkdate = time.strftime('%Y/%m/%d'+' '+'%H:%M:%S',time.gmtime(time.time()-(60*60*24*30)))
-        AthenacProbeAPI_.SendInfoToProbeByAPI(HostAgentClientInfo(hostName='TestMachine',macs=[lan2MACUpper_],domainname='PIXIS'
-        ,logonusers=[{'logonAccount':'PIXIS\\Hank','remoteLogin':False,'gpoResult':None}]
-        ,ostype='windows',osdesc='Windows Test',pendinghotfix=[f'Hotfix 123456 - KB123456'],windowshotfixlastchecktime=checkdate))
+        AthenacProbe_GRPC.SendHostInfo(AthenacProbe_GRPC.Create_HostInfo(macs=[lan2MACUpper_],DomainName='PIXIS'
+        ,Logon_Users=[{'logon_account':'PIXIS\\Hank','remote_login':True,'gpo_result':''}]
+        ,OSType='windows',OS_Display_name='Windows_Test',Pending_Hotfix=['Hotfix 123456 - KB123456']))
         time.sleep(20)
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=Testconfig_.SiteID) #透過發送 API 來執行 lan2 的 MAC 立即檢查未符規
 
@@ -306,10 +307,9 @@ class TestPreCheck:
         #判斷 lan2 的 MAC 是否有出現在未符規設備清單中
         check.is_true(checkflag
         ,f'{lan2MACUpper_} is not on illegal list while {lan2MACUpper_} hotfix check time is over 1 month and it pending hotfix count over 0')
-        #發送 lan2 MAC 的資訊： Hotfix 檢查時間是當下，且有 0 個需要更新的 hotfix 來觸發符規
-        AthenacProbeAPI_.SendInfoToProbeByAPI(HostAgentClientInfo(hostName='TestMachine',macs=[lan2MACUpper_],domainname='PIXIS'
-        ,logonusers=[{'logonAccount':'PIXIS\\Hank','remoteLogin':False,'gpoResult':None}]
-        ,ostype='windows',osdesc='Windows Test'))
+        AthenacProbe_GRPC.SendHostInfo(AthenacProbe_GRPC.Create_HostInfo(macs=[lan2MACUpper_],DomainName='PIXIS'
+        ,Logon_Users=[{'logon_account':'PIXIS\\Hank','remote_login':True,'gpo_result':''}]
+        ,OSType='windows',OS_Display_name='Windows_Test'))
         time.sleep(20)
         AthenacWebAPI_.CheckPrecheckbyMAC(mac=lan2_.mac,siteid=Testconfig_.SiteID) #透過發送 API 來執行 lan2 的 MAC 立即檢查未符規
         illegaldevices =  AthenacWebAPI_.GetPrecheckDevice(precheckid=precheckid) 
@@ -326,7 +326,7 @@ class TestAbnormalDevice:
         '''IP 衝突測試'''
         checkv4 = False
         checkv6 = False
-        for i in range(10): #使用 lan1 和 lan2 的 MAC 稱圖 test IP 和 test IPv6 ，發送 10 次每次等待 2 秒
+        for i in range(40): #使用 lan1 和 lan2 的 MAC 稱圖 test IP 和 test IPv6 ，發送 100 次每次等待 2 秒，持續發送 80 秒r藉以觸發 IP 衝突
             lan1_.SendARPReply(Testconfig_.TestIPv4)
             lan2_.SendARPReply(Testconfig_.TestIPv4)
             lan1_.SendNA(Testconfig_.TestIPv6)
@@ -561,7 +561,7 @@ class TestRadius:
         if lan1replyvlanid : lan1replyvlanid = lan1replyvlanid['VLANId']
         check.is_true(lan1replyvlanid == str(dynamicset.ExternalVerifyVLan),f'incorrect VLAN ID{lan1replyvlanid} ,it have to {dynamicset.ExternalVerifyVLan}')
         listens = PacketListenFromFilter(lan1_.nicname)
-        CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',60]) #透過 lan1 開啟封包監聽 10 分鐘並只聽 UDP 3799(CoA 封包)
+        CoAPacketCheck = threading.Thread(target=listens.Sniffer,args=['udp and port 3799',600]) #透過 lan1 開啟封包監聽 10 分鐘並只聽 UDP 3799(CoA 封包)
         CoAPacketCheck.start() #開始監聽
         AthenacCoreAPI_.SendEventOfOnorOffline(ip=f'192.168.{str(dynamicset.ExternalVerifyVLan)}.150',mac=lan1_.mac,vlanID=dynamicset.ExternalVerifyVLan,isonline=True)
         AthenacCoreAPI_.AuthMACFromUserApply(f'192.168.{str(dynamicset.ExternalVerifyVLan)}.150',lan1MACUpper_,account='admin',pwd='36IqJwCHVwl9IS4w4b1mMw==')
@@ -618,10 +618,9 @@ class TestRadius:
         AthenacWebAPI_.AddVLANMapping(lan1MACUpper_,RadiusVLANMappingType.MAC.value,None,Testconfig_.SiteID)
         AthenacWebAPI_.ClearAllPrecheckRule()
         AthenacWebAPI_.CreateUnInstallKBforPrecheckRule(siteid=Testconfig_.SiteID,KBNumbers=[123456])
-        Hostinfo = HostAgentClientInfo(hostName='TestMachine',macs=[lan1MACUpper_],domainname='PIXIS'
-        ,logonusers=[{'logonAccount':'PIXIS\\Hank','remoteLogin':False,'gpoResult':None}]
-        ,ostype='windows',osdesc='Windows Test',pendinghotfix=[f'Hotfix 123456 - KB123456'])
-        AthenacProbeAPI_.SendInfoToProbeByAPI(Hostinfo)
+        AthenacProbe_GRPC.SendHostInfo(AthenacProbe_GRPC.Create_HostInfo(macs=[lan1MACUpper_],DomainName='PIXIS'
+        ,Logon_Users=[{'logon_account': 'PIXIS\\Hank','remote_login':True,'gpo_result':''}]
+        ,OSType='windows',OS_Display_name='Windows_Test',Pending_Hotfix=['Hotfix 123456 - KB123456']))
         time.sleep(50) #等待 Hotfix 資料寫進 AtheNAC MAC 中
         lan1replyvlanid = lan1_.GetRadiusReply(serverip=Testconfig_.serverIP,nasip=lan1_.Ip)
         if lan1replyvlanid : lan1replyvlanid = lan1replyvlanid['VLANId']
@@ -649,6 +648,6 @@ lan2_ = PacketAction(Testconfig_.lan2)
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 AthenacWebAPI_ = AthenacWebAPILibry(f'https://{Testconfig_.serverIP}:8001',Testconfig_.APIaccount,base64.b64encode(Testconfig_.APIPwd.encode('UTF-8')),lan1_.Ip)
 AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{Testconfig_.serverIP}:18000',Testconfig_.probeID,Testconfig_.daemonID,lan1_.Ip)
-AthenacProbeAPI_ = AthenacProbeAPILibry(f'http://{AthenacWebAPI_.GetPortWorerkIPbyID(Testconfig_.probeID)}:18002',lan1_.Ip)
+AthenacProbe_GRPC = Athenac_Probe_GRPC_libry(probeIP=Testconfig_.probeIP,nicIP=lan1_.Ip)
 
 #endregion

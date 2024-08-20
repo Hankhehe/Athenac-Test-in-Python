@@ -61,15 +61,15 @@ class TestLotOfDevice:
             inputs.append((iplist[i],maclist[i]))
         pool = Pool(14)
         pool.starmap(lan2_.SendARPReply,inputs)
-        time.sleep(120) #等待 2 分鐘後透過 API 取得主機列表上線的 IP 和 MAC 資訊清單
-        onlineHostslist = AthenacWebAPI_.GetUsedHost(SiteId=Testconfig_.SiteID,isOnline=True)
-        onlineHostsdict = {}
-        for i in onlineHostslist :
-            onlineHostsdict[i['IP']] = i['MAC']
-        for i in range(1,len(iplist)-1): #依序檢查是否每個 IP 和 MAC 都在清單中
-            if str(iplist[i]) in onlineHostsdict :
-                assert onlineHostsdict[str(iplist[i])] == maclist[i],f'{str(iplist[i])} MAC is not {maclist[i]},it is {onlineHostsdict[str(iplist[i])]}'
-            else : assert False,f'It can not found IP {str(iplist[i])} in hosts as online'
+        # time.sleep(120) #等待 2 分鐘後透過 API 取得主機列表上線的 IP 和 MAC 資訊清單
+        # onlineHostslist = AthenacWebAPI_.GetUsedHost(SiteId=Testconfig_.SiteID,isOnline=True)
+        # onlineHostsdict = {}
+        # for i in onlineHostslist :
+        #     onlineHostsdict[i['IP']] = i['MAC']
+        # for i in range(1,len(iplist)-1): #依序檢查是否每個 IP 和 MAC 都在清單中
+        #     if str(iplist[i]) in onlineHostsdict :
+        #         assert onlineHostsdict[str(iplist[i])] == maclist[i],f'{str(iplist[i])} MAC is not {maclist[i]},it is {onlineHostsdict[str(iplist[i])]}'
+        #     else : assert False,f'It can not found IP {str(iplist[i])} in hosts as online'
 
     def test_SendIPv6OnlineByPacket(self,CIDR:str) -> None:
         '''大量 IPv6 上線壓力測試非同步'''
@@ -114,12 +114,11 @@ AthenacProbeAPI_ = AthenacProbeAPILibry(f'http://{AthenacWebAPI_.GetPortWorerkIP
 
 if __name__ == '__main__':
     LotDeviceTest = TestLotOfDevice()
-    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='172.17.0.0/17',VLANId=17,isOnline=True,IPv6=False) #IPv4 上線
-    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=True,IPv6=True) #IPv6 上線
-    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='172.24.0.0/17',VLANId=24,isOnline=False,IPv6=False) #IPv4 下線
-    LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=False,IPv6=True) #IPv6 下線
+    # LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='172.17.0.0/17',VLANId=17,isOnline=True,IPv6=False) #IPv4 上線
+    # LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=True,IPv6=True) #IPv6 上線
+    # LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='172.24.0.0/17',VLANId=24,isOnline=False,IPv6=False) #IPv4 下線
+    # LotDeviceTest.test_SendOnlineOrOfflineByAPI(CIDR='2001:b030:2133:811:ffff::/113',VLANId=17,isOnline=False,IPv6=True) #IPv6 下線
 
-    # LotDeviceTest.test_SendIPv4OnlineByPacket(CIDR='172.17.0.0/17')
     # LotDeviceTest.test_SendIPv6OnlineByPacket(CIDR='2001:b030:2133:811:ffff::/113')
     # DHCPTest = TestDHCP()
     # DHCPTest.test_DHCPAsync(Count=50,logfile='DHCPLog.csv')

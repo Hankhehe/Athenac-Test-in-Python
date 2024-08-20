@@ -192,7 +192,7 @@ class AthenacWebAPILibry:
     def DelIP(self,ip:str,siteid:int,IPv6Type:bool=False)->None:
         ipdata = self.GetIPDetail(ip,siteid,IPv6Type)
         if not ipdata : return
-        Path = f'/api/Hosts/Delete/Ip/{ipdata["HostId"]}'
+        Path = f'/api/Hosts/Delete/Ip/{ipdata["IpAddressId"]}'
         for retriescount in range(self.retriesnum):
             Header = {'Authorization':self.Token}
             r = self.APIsource.post(self.ServerIP+Path,headers=Header,verify=False)

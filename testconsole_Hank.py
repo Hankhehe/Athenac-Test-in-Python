@@ -2,7 +2,6 @@ import csv,time,json,base64
 from NetPacketTools.packet_action import PacketAction
 from APITools.athenac_web_API_libry import AthenacWebAPILibry
 from APITools.athenac_core_API_libry import AthenacCoreAPILibry
-from APITools.athenac_probe_API_libry import AthenacProbeAPILibry
 from NetPacketTools.packet_listen_RadiusProxy import PacketListenRadiusProxy
 from CreateData import iprelated,macrelated
 from NetPacketTools.packet_action_DHCPasync import PacketActionDHCPasync
@@ -74,32 +73,13 @@ lan1MACUpper_ = ''.join(lan1_.mac.upper().split(':'))
 lan2_ = PacketAction(Testconfig_.lan2)
 lan2MACUpper_ = ''.join(lan2_.mac.upper().split(':'))
 
-lan = PacketAction('Ethernet3')
-
-iplist = iprelated.CreateIPDataByCIDROrPrifix('172.16.0.0/19')
-iplist2 = iprelated.CreateIPDataByCIDROrPrifix('10.10.1.0/19')
-maclist = macrelated.CreateMACData(mac='AA0000000000',count=len(iplist))
-maclist2 = macrelated.CreateMACData(mac='AC0000000000',count=len(iplist2))
-
-while True:
-    for i in range(1,1000+1):
-        lan.SendARPReply(IP= str(iplist[i]),MAC=maclist[i])
-        # print(lan.GetIPfromDHCPv4(tranId=i,mac=str(maclist2[i])))
-        # time.sleep(1)
-    
-    for i in range(1,100+1):
-        lan.SendARPReply(IP=str(iplist2[i]),MAC=maclist2[i])
-    time.sleep(120)
-pass
-
 AthenacWebAPI_ = AthenacWebAPILibry(f'https://{Testconfig_.serverIP}:8001',Testconfig_.APIaccount,base64.b64encode(Testconfig_.APIPwd.encode('UTF-8')),lan1_.Ip)
 AthenacCoreAPI_ = AthenacCoreAPILibry(f'https://{Testconfig_.serverIP}:18000',Testconfig_.probeID,Testconfig_.daemonID,lan1_.Ip)
-AthenacProbeAPI_ = AthenacProbeAPILibry(f'http://{AthenacWebAPI_.GetPortWorerkIPbyID(Testconfig_.probeID)}:18002',lan1_.Ip)
 
 #endregion config
 
 
-# lan1_.SendNBNSResponse(name='Hank',workgroup=False) #發送主機名稱 by NBNS
+# lan2_.SendNBNSResponse(name='PC01FAB',workgroup=False) #發送主機名稱 by NBNS
 # lan1_.SendNBNSResponse(name='WORKGROUP',workgroup=True) #發送網域群組 by NBNS
 # SendIPConflict(IP='172.17.0.5',MAClist=['AA0000000000','AA1111111111','AA2222222222'])
 # RunRadiusProxy()
